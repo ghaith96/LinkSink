@@ -1,0 +1,6 @@
+Initial release of LinkSink:
+• Save links from any app via share menu
+• Sync links to Discord using webhooks
+• Local-first with offline support
+• Material You dynamic theming
+• Background sync with WorkManager
