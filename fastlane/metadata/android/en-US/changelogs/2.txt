@@ -1,0 +1,16 @@
+v1.1.0 - Topics, Search & Metadata
+
+New Features:
+• Topics - Organize links into topics with custom names
+• Per-topic webhooks - LOCAL_ONLY, global, or custom webhook per topic
+• Fuzzy search - Search links by URL or title with typo tolerance
+• Date filtering - Filter links by Today, This Week, or This Month
+• Link metadata - Automatically fetches title, description, and thumbnail
+• Topic management - Create, edit, and delete topics from Settings
+
+Improvements:
+• Enhanced share sheet with quick topic selection
+• Filter chips show active filters at a glance
+• Links display their assigned topic
+• Better offline handling with queued sync
+• Improved search works reliably on all devices

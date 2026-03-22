@@ -7,11 +7,22 @@ LinkSink is a simple, privacy-focused Android app for saving links from any app 
 ## Features
 
 - **Share from anywhere** - Use Android's share menu to save links from any app
+- **Topics** - Organize links into topics with custom webhook settings
 - **Discord sync** - Automatically post saved links to Discord channels via webhooks
+- **Fuzzy search** - Find links quickly with typo-tolerant search across URLs and titles
+- **Date filtering** - Filter links by Today, This Week, or This Month
+- **Link metadata** - Auto-fetch title, description, and thumbnail from URLs
 - **Local-first** - Your data stays on your device with offline support
 - **Background sync** - Links sync automatically when you're back online
 - **Material You** - Dynamic theming that adapts to your system colors
 - **Swipe to delete** - Clean gesture-based link management
+
+### Topic Webhook Modes
+
+Each topic can have its own webhook configuration:
+- **Local Only** - Keep links private, no Discord sync
+- **Use Global** - Use your default webhook URL
+- **Custom** - Set a unique webhook per topic (great for different Discord channels)
 
 ## Screenshots
 
@@ -95,3 +106,4 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 - Collecting research links
 - Sharing discoveries with Discord communities
 - Building a personal link archive
+- Organizing links by project or interest
