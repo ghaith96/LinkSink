@@ -14,8 +14,8 @@ android {
         applicationId = "com.linksink"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,6 +57,17 @@ android {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin" &&
+            requested.name.startsWith("kotlin-stdlib")
+        ) {
+            useVersion(libs.versions.kotlin.get())
+            because("Align Kotlin stdlib with Kotlin compiler")
+        }
+    }
+}
+
 dependencies {
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
@@ -95,6 +106,9 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+
+    // Fuzzy search
+    implementation(libs.kt.fuzzy)
 
     // Material
     implementation(libs.material)

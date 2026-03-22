@@ -42,4 +42,36 @@ interface LinkDao {
 
     @Query("SELECT COUNT(*) FROM links")
     fun getTotalCount(): Flow<Int>
+
+    @Query(
+        """
+        SELECT * FROM links 
+        WHERE (:topicId IS NULL OR topic_id = :topicId)
+        AND (:startDate IS NULL OR saved_at >= :startDate)
+        AND (:endDate IS NULL OR saved_at <= :endDate)
+        ORDER BY saved_at DESC
+        """
+    )
+    fun getFiltered(
+        topicId: Long?,
+        startDate: Long?,
+        endDate: Long?
+    ): Flow<List<LinkEntity>>
+
+    @Query("UPDATE links SET topic_id = :topicId WHERE id = :linkId")
+    suspend fun updateTopic(linkId: Long, topicId: Long?)
+
+    @Query(
+        """
+        UPDATE links 
+        SET title = :title, description = :description, thumbnail_url = :thumbnailUrl 
+        WHERE id = :linkId
+        """
+    )
+    suspend fun updateMetadata(
+        linkId: Long,
+        title: String?,
+        description: String?,
+        thumbnailUrl: String?
+    )
 }

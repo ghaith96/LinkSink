@@ -6,13 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [LinkEntity::class],
-    version = 1,
+    entities = [LinkEntity::class, TopicEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class LinkDatabase : RoomDatabase() {
 
     abstract fun linkDao(): LinkDao
+    abstract fun topicDao(): TopicDao
 
     companion object {
         private const val DATABASE_NAME = "linksink.db"
@@ -31,7 +32,9 @@ abstract class LinkDatabase : RoomDatabase() {
                 context.applicationContext,
                 LinkDatabase::class.java,
                 DATABASE_NAME
-            ).build()
+            )
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .build()
         }
     }
 }
