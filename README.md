@@ -31,6 +31,10 @@ Coming soon.
 
 Download the latest APK from the [Releases](../../releases) page.
 
+### Obtainium
+
+[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60">](obtainium://add/https://github.com/ghaith96/LinkSink)
+
 ### Build from Source
 
 ```bash
