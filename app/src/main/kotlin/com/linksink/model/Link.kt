@@ -16,6 +16,7 @@ data class Link(
     val thumbnailUrl: String? = null,
     val note: String? = null,
     val domain: String,
+    val topicId: Long? = null,
     val savedAt: Instant,
     val syncStatus: SyncStatus,
     val discordMessageId: String? = null,
@@ -27,4 +28,10 @@ data class LinkMetadata(
     val description: String?,
     val imageUrl: String?,
     val siteName: String?
-)
+) {
+    companion object {
+        val EMPTY = LinkMetadata(null, null, null, null)
+    }
+
+    val isEmpty: Boolean get() = title == null && description == null && imageUrl == null
+}

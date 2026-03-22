@@ -30,6 +30,9 @@ data class LinkEntity(
     @ColumnInfo(name = "domain")
     val domain: String,
 
+    @ColumnInfo(name = "topic_id")
+    val topicId: Long? = null,
+
     @ColumnInfo(name = "saved_at")
     val savedAt: Long,
 
@@ -51,6 +54,7 @@ fun LinkEntity.toDomain(): Link = Link(
     thumbnailUrl = thumbnailUrl,
     note = note,
     domain = domain,
+    topicId = topicId,
     savedAt = Instant.ofEpochMilli(savedAt),
     syncStatus = SyncStatus.valueOf(syncStatus),
     discordMessageId = discordMessageId,
@@ -65,6 +69,7 @@ fun Link.toEntity(): LinkEntity = LinkEntity(
     thumbnailUrl = thumbnailUrl,
     note = note,
     domain = domain,
+    topicId = topicId,
     savedAt = savedAt.toEpochMilli(),
     syncStatus = syncStatus.name,
     discordMessageId = discordMessageId,
