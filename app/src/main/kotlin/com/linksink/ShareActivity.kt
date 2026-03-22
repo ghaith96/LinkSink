@@ -24,7 +24,10 @@ class ShareActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val app = application as LinkSinkApp
-        viewModel = ShareViewModel(repository = app.repository)
+        viewModel = ShareViewModel(
+            repository = app.repository,
+            topicRepository = app.topicRepository
+        )
 
         val sharedText = when (intent?.action) {
             Intent.ACTION_SEND -> {

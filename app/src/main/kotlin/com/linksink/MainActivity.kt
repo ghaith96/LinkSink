@@ -30,7 +30,10 @@ class MainActivity : ComponentActivity() {
                 return@launch
             }
 
-            viewModel = LinkListViewModel(repository = app.repository)
+            viewModel = LinkListViewModel(
+                repository = app.repository,
+                topicRepository = app.topicRepository
+            )
 
             setContent {
                 LinkSinkTheme {

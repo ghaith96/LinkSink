@@ -5,33 +5,52 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.linksink.ui.SettingsScreen
+import com.linksink.ui.TopicManagementScreen
 import com.linksink.ui.theme.LinkSinkTheme
 import com.linksink.viewmodel.SettingsViewModel
+import com.linksink.viewmodel.TopicViewModel
 
 class SettingsActivity : ComponentActivity() {
 
-    private lateinit var viewModel: SettingsViewModel
+    private lateinit var settingsViewModel: SettingsViewModel
+    private lateinit var topicViewModel: TopicViewModel
+    private var showTopicManagement by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val app = application as LinkSinkApp
-        viewModel = SettingsViewModel(
+        settingsViewModel = SettingsViewModel(
             settingsStore = app.settingsStore,
+            discordClient = app.discordClient
+        )
+        topicViewModel = TopicViewModel(
+            topicRepository = app.topicRepository,
             discordClient = app.discordClient
         )
 
         setContent {
             LinkSinkTheme {
-                SettingsScreen(
-                    viewModel = viewModel,
-                    onSettingsSaved = {
-                        startActivity(Intent(this, MainActivity::class.java))
-                        finish()
-                    }
-                )
+                if (showTopicManagement) {
+                    TopicManagementScreen(
+                        viewModel = topicViewModel,
+                        onBack = { showTopicManagement = false }
+                    )
+                } else {
+                    SettingsScreen(
+                        viewModel = settingsViewModel,
+                        onSettingsSaved = {
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        },
+                        onManageTopicsClick = { showTopicManagement = true }
+                    )
+                }
             }
         }
     }
