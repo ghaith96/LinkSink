@@ -3,16 +3,23 @@ package com.linksink.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.linksink.data.LinkRepository
+import com.linksink.data.TopicRepository
+import com.linksink.model.Topic
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface ShareUiState {
     data object Idle : ShareUiState
     data class Extracting(val rawText: String) : ShareUiState
-    data class Ready(val url: String, val domain: String) : ShareUiState
+    data class Ready(
+        val url: String,
+        val domain: String,
+        val selectedTopicId: Long? = null
+    ) : ShareUiState
     data object Saving : ShareUiState
     data object Success : ShareUiState
     data class Error(val message: String) : ShareUiState
@@ -20,11 +27,18 @@ sealed interface ShareUiState {
 }
 
 class ShareViewModel(
-    private val repository: LinkRepository
+    private val repository: LinkRepository,
+    private val topicRepository: TopicRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ShareUiState>(ShareUiState.Idle)
     val uiState: StateFlow<ShareUiState> = _uiState.asStateFlow()
+
+    val recentTopics: StateFlow<List<Topic>> = topicRepository.getRecentTopics()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val allTopics: StateFlow<List<Topic>> = topicRepository.getAllTopics()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun processSharedText(text: String?) {
         if (text.isNullOrBlank()) {
@@ -44,6 +58,13 @@ class ShareViewModel(
         _uiState.value = ShareUiState.Ready(url = url, domain = domain)
     }
 
+    fun selectTopic(topicId: Long?) {
+        val currentState = _uiState.value
+        if (currentState is ShareUiState.Ready) {
+            _uiState.value = currentState.copy(selectedTopicId = topicId)
+        }
+    }
+
     fun saveLink() {
         val currentState = _uiState.value
         if (currentState !is ShareUiState.Ready) return
@@ -51,7 +72,10 @@ class ShareViewModel(
         _uiState.value = ShareUiState.Saving
 
         viewModelScope.launch {
-            val result = repository.saveLink(currentState.url)
+            val result = repository.saveLink(
+                url = currentState.url,
+                topicId = currentState.selectedTopicId
+            )
             _uiState.value = if (result.isSuccess) {
                 ShareUiState.Success
             } else {

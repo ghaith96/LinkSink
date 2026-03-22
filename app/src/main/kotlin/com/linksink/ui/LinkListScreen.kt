@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Settings
@@ -30,6 +32,8 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,14 +47,21 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Link
 import com.linksink.model.SyncStatus
+import com.linksink.model.Topic
+import com.linksink.ui.components.DateRangePickerSheet
+import com.linksink.ui.components.FilterChips
+import com.linksink.ui.components.SearchBar
+import com.linksink.ui.components.TopicChipSmall
 import com.linksink.viewmodel.LinkListUiState
 import com.linksink.viewmodel.LinkListViewModel
 import java.time.ZoneId
@@ -64,7 +75,16 @@ fun LinkListScreen(
     onSettingsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val topicFilter by viewModel.topicFilter.collectAsState()
+    val dateRange by viewModel.dateRange.collectAsState()
+    val topics by viewModel.topics.collectAsState()
     val context = LocalContext.current
+
+    var showTopicDropdown by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val selectedTopicName = topics.find { it.id == topicFilter }?.name
 
     Scaffold(
         topBar = {
@@ -86,6 +106,33 @@ fun LinkListScreen(
                             }
                         }
                     }
+
+                    Box {
+                        IconButton(onClick = { showTopicDropdown = true }) {
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Filter by topic"
+                            )
+                        }
+                        TopicFilterDropdown(
+                            expanded = showTopicDropdown,
+                            topics = topics,
+                            selectedTopicId = topicFilter,
+                            onTopicSelected = { 
+                                viewModel.setTopicFilter(it)
+                                showTopicDropdown = false
+                            },
+                            onDismiss = { showTopicDropdown = false }
+                        )
+                    }
+
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Filter by date"
+                        )
+                    }
+
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -96,55 +143,105 @@ fun LinkListScreen(
             )
         }
     ) { padding ->
-        when (val state = uiState) {
-            is LinkListUiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.setSearchQuery(it) }
+            )
 
-            is LinkListUiState.Empty -> {
-                EmptyContent(
-                    message = state.message,
-                    modifier = Modifier.padding(padding)
+            if (topicFilter != null || dateRange != null) {
+                FilterChips(
+                    topicName = selectedTopicName,
+                    dateRange = dateRange,
+                    onClearTopic = { viewModel.setTopicFilter(null) },
+                    onClearDateRange = { viewModel.setDateRange(null) },
+                    onClearAll = { viewModel.clearFilters() }
                 )
             }
 
-            is LinkListUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(
-                        items = state.links,
-                        key = { it.id }
-                    ) { link ->
-                        SwipeableLinkCard(
-                            link = link,
-                            onDelete = { viewModel.deleteLink(link) },
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
-                                context.startActivity(intent)
-                            }
-                        )
+            when (val state = uiState) {
+                is LinkListUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
                     }
                 }
-            }
 
-            is LinkListUiState.Error -> {
-                ErrorContent(
-                    message = state.message,
-                    modifier = Modifier.padding(padding)
-                )
+                is LinkListUiState.Empty -> {
+                    EmptyContent(message = state.message)
+                }
+
+                is LinkListUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            items = state.links,
+                            key = { it.id }
+                        ) { link ->
+                            val linkTopicName = topics.find { it.id == link.topicId }?.name
+                            SwipeableLinkCard(
+                                link = link,
+                                topicName = linkTopicName,
+                                onDelete = { viewModel.deleteLink(link) },
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                                    context.startActivity(intent)
+                                }
+                            )
+                        }
+                    }
+                }
+
+                is LinkListUiState.Error -> {
+                    ErrorContent(message = state.message)
+                }
             }
+        }
+
+        if (showDatePicker) {
+            DateRangePickerSheet(
+                currentRange = dateRange,
+                onRangeSelected = { viewModel.setDateRange(it) },
+                onDismiss = { showDatePicker = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun TopicFilterDropdown(
+    expanded: Boolean,
+    topics: List<Topic>,
+    selectedTopicId: Long?,
+    onTopicSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss
+    ) {
+        DropdownMenuItem(
+            text = { Text("All Topics") },
+            onClick = { onTopicSelected(null) }
+        )
+        DropdownMenuItem(
+            text = { Text("Uncategorized") },
+            onClick = { onTopicSelected(-1L) }
+        )
+        topics.forEach { topic ->
+            DropdownMenuItem(
+                text = { Text(topic.name) },
+                onClick = { onTopicSelected(topic.id) }
+            )
         }
     }
 }
@@ -153,6 +250,7 @@ fun LinkListScreen(
 @Composable
 private fun SwipeableLinkCard(
     link: Link,
+    topicName: String?,
     onDelete: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -185,13 +283,14 @@ private fun SwipeableLinkCard(
         },
         enableDismissFromStartToEnd = false
     ) {
-        LinkCard(link = link, onClick = onClick)
+        LinkCard(link = link, topicName = topicName, onClick = onClick)
     }
 }
 
 @Composable
 private fun LinkCard(
     link: Link,
+    topicName: String?,
     onClick: () -> Unit
 ) {
     Card(
@@ -234,11 +333,19 @@ private fun LinkCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = formatTimestamp(link),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = formatTimestamp(link),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    if (topicName != null) {
+                        TopicChipSmall(topicName = topicName)
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))

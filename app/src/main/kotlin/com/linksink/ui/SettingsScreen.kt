@@ -49,7 +49,8 @@ import com.linksink.viewmodel.TestResult
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onSettingsSaved: () -> Unit
+    onSettingsSaved: () -> Unit,
+    onManageTopicsClick: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -105,6 +106,7 @@ fun SettingsScreen(
                 onClearClicked = viewModel::clearSettings,
                 onTestClicked = viewModel::testConnection,
                 onSaveClicked = viewModel::saveSettings,
+                onManageTopicsClick = onManageTopicsClick,
                 modifier = Modifier.padding(padding)
             )
         }
@@ -119,6 +121,7 @@ private fun SettingsContent(
     onClearClicked: () -> Unit,
     onTestClicked: () -> Unit,
     onSaveClicked: () -> Unit,
+    onManageTopicsClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -230,6 +233,39 @@ private fun SettingsContent(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Save")
+            }
+        }
+
+        if (onManageTopicsClick != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Topics",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Organize your links into topics with custom webhook settings.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = onManageTopicsClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Manage Topics")
+                    }
+                }
             }
         }
     }
