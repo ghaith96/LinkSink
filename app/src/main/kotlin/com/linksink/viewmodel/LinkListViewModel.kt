@@ -6,12 +6,16 @@ import com.linksink.data.LinkRepository
 import com.linksink.data.SettingsStore
 import com.linksink.data.TopicRepository
 import com.linksink.model.DateRange
+import com.linksink.model.HookMode
 import com.linksink.model.Link
 import com.linksink.model.Topic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -60,6 +64,9 @@ class LinkListViewModel(
 
     val sectionStates: StateFlow<Map<String, Boolean>> = settingsStore.sectionStates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val _editTopicRequest = MutableSharedFlow<Topic>(replay = 0)
+    val editTopicRequest: SharedFlow<Topic> = _editTopicRequest.asSharedFlow()
 
     init {
         loadLinks()
@@ -121,6 +128,20 @@ class LinkListViewModel(
     fun setSectionExpanded(key: String, expanded: Boolean) {
         viewModelScope.launch {
             settingsStore.setSectionExpanded(key, expanded)
+        }
+    }
+
+    fun updateTopicHookMode(topic: Topic, mode: HookMode) {
+        viewModelScope.launch {
+            val updated = topic.copy(
+                hookMode = mode,
+                customWebhookUrl = if (mode == HookMode.CUSTOM) topic.customWebhookUrl else null
+            )
+            if (mode == HookMode.CUSTOM) {
+                _editTopicRequest.emit(topic)
+            } else {
+                topicRepository.updateTopic(updated)
+            }
         }
     }
 

@@ -64,6 +64,7 @@ import com.linksink.ui.components.SearchBar
 import com.linksink.ui.components.TopicChipSmall
 import com.linksink.viewmodel.LinkListUiState
 import com.linksink.viewmodel.LinkListViewModel
+import com.linksink.viewmodel.TopicViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -72,6 +73,7 @@ import java.time.format.FormatStyle
 @Composable
 fun LinkListScreen(
     viewModel: LinkListViewModel,
+    topicViewModel: TopicViewModel,
     onSettingsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()

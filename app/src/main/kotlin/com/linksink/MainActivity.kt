@@ -9,12 +9,14 @@ import androidx.lifecycle.lifecycleScope
 import com.linksink.ui.LinkListScreen
 import com.linksink.ui.theme.LinkSinkTheme
 import com.linksink.viewmodel.LinkListViewModel
+import com.linksink.viewmodel.TopicViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: LinkListViewModel
+    private lateinit var topicViewModel: TopicViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,10 +38,16 @@ class MainActivity : ComponentActivity() {
                 settingsStore = app.settingsStore
             )
 
+            topicViewModel = TopicViewModel(
+                topicRepository = app.topicRepository,
+                discordClient = app.discordClient
+            )
+
             setContent {
                 LinkSinkTheme {
                     LinkListScreen(
                         viewModel = viewModel,
+                        topicViewModel = topicViewModel,
                         onSettingsClick = {
                             startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
                         }
