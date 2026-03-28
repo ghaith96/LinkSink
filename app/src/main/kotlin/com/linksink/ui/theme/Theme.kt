@@ -10,24 +10,56 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
+internal val DarkColorScheme = darkColorScheme(
     primary = LinkSinkPrimaryLight,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    onPrimary = androidx.compose.ui.graphics.Color.White
+    onPrimary = LinkSinkOnSecondaryDark,
+    primaryContainer = LinkSinkPrimaryContainerDark,
+    onPrimaryContainer = LinkSinkOnPrimaryContainerDark,
+    secondary = LinkSinkSecondaryDark,
+    onSecondary = LinkSinkOnSecondaryDark,
+    secondaryContainer = LinkSinkSecondaryContainerDark,
+    onSecondaryContainer = LinkSinkOnSecondaryContainerDark,
+    tertiary = LinkSinkTertiaryDark,
+    onTertiary = LinkSinkOnTertiaryDark,
+    tertiaryContainer = LinkSinkTertiaryContainerDark,
+    onTertiaryContainer = LinkSinkOnTertiaryContainerDark,
+    background = LinkSinkBackgroundDark,
+    onBackground = LinkSinkOnBackgroundDark,
+    surface = LinkSinkSurfaceDark,
+    onSurface = LinkSinkOnSurfaceDark,
+    surfaceVariant = LinkSinkSurfaceVariantDark,
+    onSurfaceVariant = LinkSinkOnSurfaceVariantDark,
+    outline = LinkSinkOutlineDark,
+    outlineVariant = LinkSinkOutlineVariantDark,
 )
 
-private val LightColorScheme = lightColorScheme(
+internal val LightColorScheme = lightColorScheme(
     primary = LinkSinkPrimary,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-    onPrimary = androidx.compose.ui.graphics.Color.White
+    onPrimary = LinkSinkOnSecondary,
+    primaryContainer = LinkSinkPrimaryContainer,
+    onPrimaryContainer = LinkSinkOnPrimaryContainer,
+    secondary = LinkSinkSecondary,
+    onSecondary = LinkSinkOnSecondary,
+    secondaryContainer = LinkSinkSecondaryContainer,
+    onSecondaryContainer = LinkSinkOnSecondaryContainer,
+    tertiary = LinkSinkTertiary,
+    onTertiary = LinkSinkOnTertiary,
+    tertiaryContainer = LinkSinkTertiaryContainer,
+    onTertiaryContainer = LinkSinkOnTertiaryContainer,
+    background = LinkSinkBackground,
+    onBackground = LinkSinkOnBackground,
+    surface = LinkSinkSurface,
+    onSurface = LinkSinkOnSurface,
+    surfaceVariant = LinkSinkSurfaceVariant,
+    onSurfaceVariant = LinkSinkOnSurfaceVariant,
+    outline = LinkSinkOutline,
+    outlineVariant = LinkSinkOutlineVariant,
 )
 
 @Composable
 fun LinkSinkTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
