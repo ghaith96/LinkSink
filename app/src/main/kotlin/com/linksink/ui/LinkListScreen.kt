@@ -662,3 +662,49 @@ private fun formatTimestamp(link: Link): String {
         .withZone(ZoneId.systemDefault())
     return formatter.format(link.savedAt)
 }
+
+// --- Compose Previews ---
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewLinkCard() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface {
+            LinkCard(
+                link = Link(
+                    id = 1,
+                    url = "https://github.com/google/compose-samples",
+                    title = "Jetpack Compose samples by Google",
+                    description = "A collection of sample apps demonstrating how to build Android apps with Jetpack Compose.",
+                    domain = "github.com",
+                    topicId = null,
+                    savedAt = java.time.Instant.now(),
+                    syncStatus = com.linksink.model.SyncStatus.SYNCED
+                ),
+                topicName = "Dev",
+                topicColor = 0xFF5865F2.toInt(),
+                onClick = {}
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewEmptyContent() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface {
+            EmptyContent(message = "No links saved yet")
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewErrorContent() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface {
+            ErrorContent(message = "Failed to load links. Check your connection.", onRetry = {})
+        }
+    }
+}

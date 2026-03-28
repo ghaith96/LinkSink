@@ -369,3 +369,26 @@ private fun NoUrlContent(onDismiss: () -> Unit) {
         Text("OK")
     }
 }
+
+// --- Compose Previews ---
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewSuccessContent() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = 6.dp
+        ) {
+            androidx.compose.foundation.layout.Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                SuccessContent()
+            }
+        }
+    }
+}

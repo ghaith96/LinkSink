@@ -99,3 +99,41 @@ internal fun TopicSectionHeader(
         }
     }
 }
+
+// --- Compose Previews ---
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewTopicSectionHeaderExpanded() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface {
+            TopicSectionHeader(
+                topic = com.linksink.model.Topic(
+                    id = 1,
+                    name = "Design",
+                    color = 0xFF5865F2.toInt()
+                ),
+                linkCount = 12,
+                expanded = true,
+                onToggle = {},
+                onEditTopic = {}
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.PreviewLightDark
+@Composable
+private fun PreviewTopicSectionHeaderCollapsed() {
+    com.linksink.ui.theme.LinkSinkTheme {
+        androidx.compose.material3.Surface {
+            TopicSectionHeader(
+                topic = com.linksink.model.Topic(id = 2, name = "Reading"),
+                linkCount = 5,
+                expanded = false,
+                onToggle = {},
+                onEditTopic = {}
+            )
+        }
+    }
+}
