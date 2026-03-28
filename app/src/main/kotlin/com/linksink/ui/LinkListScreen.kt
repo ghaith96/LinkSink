@@ -96,13 +96,6 @@ fun LinkListScreen(
 
     val selectedTopicName = topics.find { it.id == topicFilter }?.name
 
-    // Handle edit-topic requests from the inline sync-mode badge (CUSTOM path)
-    LaunchedEffect(Unit) {
-        viewModel.editTopicRequest.collect { topic ->
-            topicViewModel.selectTopic(topic)
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -201,12 +194,7 @@ fun LinkListScreen(
                             sectionStates = sectionStates,
                             onToggleSection = { viewModel.toggleSection(it) },
                             onDelete = { viewModel.deleteLink(it) },
-                            onHookModeChange = { topic, mode ->
-                                viewModel.updateTopicHookMode(topic, mode)
-                            },
-                            onEditCustom = { topic ->
-                                topicViewModel.selectTopic(topic)
-                            },
+                            onEditTopic = { topic -> topicViewModel.selectTopic(topic) },
                             context = context
                         )
                     } else {
@@ -272,8 +260,7 @@ private fun TopicSectionedList(
     sectionStates: Map<String, Boolean>,
     onToggleSection: (String) -> Unit,
     onDelete: (Link) -> Unit,
-    onHookModeChange: (Topic, com.linksink.model.HookMode) -> Unit,
-    onEditCustom: (Topic) -> Unit,
+    onEditTopic: (Topic) -> Unit,
     context: android.content.Context
 ) {
     LazyColumn(
@@ -291,8 +278,7 @@ private fun TopicSectionedList(
                         linkCount = section.links.size,
                         expanded = expanded,
                         onToggle = { onToggleSection(key) },
-                        onHookModeChange = { mode -> section.topic?.let { onHookModeChange(it, mode) } },
-                        onEditCustom = { section.topic?.let { onEditCustom(it) } },
+                        onEditTopic = { section.topic?.let { onEditTopic(it) } },
                         modifier = Modifier
                     )
                     HorizontalDivider()
