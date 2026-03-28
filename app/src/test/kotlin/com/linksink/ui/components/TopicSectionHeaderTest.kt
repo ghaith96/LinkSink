@@ -5,6 +5,7 @@ import com.linksink.model.HookMode
 import com.linksink.model.Topic
 import com.linksink.viewmodel.TopicSection
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -29,5 +30,10 @@ class TopicSectionHeaderTest {
     fun `TopicSection with null topic has no topic`() {
         val section = TopicSection(topic = null, links = emptyList())
         assertNull(section.topic)
+    }
+
+    @Test
+    fun `section header default UI configuration excludes visible settings action`() {
+        assertFalse(topicSectionHeaderDefaultUiConfig().includeVisibleSettingsAction)
     }
 }
