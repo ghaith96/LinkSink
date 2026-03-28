@@ -96,3 +96,10 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE topics ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE links ADD COLUMN is_read INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE links ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0")
+    }
+}

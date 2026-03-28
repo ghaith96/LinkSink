@@ -21,7 +21,9 @@ data class Link(
     val savedAt: Instant,
     val syncStatus: SyncStatus,
     val discordMessageId: String? = null,
-    val retryCount: Int = 0
+    val retryCount: Int = 0,
+    val isRead: Boolean = false,
+    val isArchived: Boolean = false
 )
 
 data class LinkMetadata(

@@ -43,7 +43,13 @@ data class LinkEntity(
     val discordMessageId: String?,
 
     @ColumnInfo(name = "retry_count")
-    val retryCount: Int = 0
+    val retryCount: Int = 0,
+
+    @ColumnInfo(name = "is_read")
+    val isRead: Boolean = false,
+
+    @ColumnInfo(name = "is_archived")
+    val isArchived: Boolean = false
 )
 
 fun LinkEntity.toDomain(): Link = Link(
@@ -58,7 +64,9 @@ fun LinkEntity.toDomain(): Link = Link(
     savedAt = Instant.ofEpochMilli(savedAt),
     syncStatus = SyncStatus.valueOf(syncStatus),
     discordMessageId = discordMessageId,
-    retryCount = retryCount
+    retryCount = retryCount,
+    isRead = isRead,
+    isArchived = isArchived
 )
 
 fun Link.toEntity(): LinkEntity = LinkEntity(
@@ -73,5 +81,7 @@ fun Link.toEntity(): LinkEntity = LinkEntity(
     savedAt = savedAt.toEpochMilli(),
     syncStatus = syncStatus.name,
     discordMessageId = discordMessageId,
-    retryCount = retryCount
+    retryCount = retryCount,
+    isRead = isRead,
+    isArchived = isArchived
 )

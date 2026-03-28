@@ -160,6 +160,12 @@ private class SyncPolicyLinkDao : LinkDao {
         description: String?,
         thumbnailUrl: String?
     ) = Unit
+
+    override suspend fun updateReadStatus(id: Long, isRead: Boolean) = Unit
+    override suspend fun updateArchivedStatus(id: Long, isArchived: Boolean) = Unit
+    override fun getUnreadLinks(): Flow<List<LinkEntity>> = flowOf(emptyList())
+    override fun getArchivedLinks(): Flow<List<LinkEntity>> = flowOf(emptyList())
+    override suspend fun getRandomUnreadLink(): LinkEntity? = null
 }
 
 private class SyncPolicyMetadataFetcher : MetadataFetcherPort {

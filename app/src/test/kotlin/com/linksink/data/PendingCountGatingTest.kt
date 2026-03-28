@@ -60,6 +60,11 @@ private class PendingCountLinkDao(pendingCount: Int) : LinkDao {
     override fun getFiltered(topicId: Long?, startDate: Long?, endDate: Long?): Flow<List<LinkEntity>> = flowOf(emptyList())
     override suspend fun updateTopic(linkId: Long, topicId: Long?) = Unit
     override suspend fun updateMetadata(linkId: Long, title: String?, description: String?, thumbnailUrl: String?) = Unit
+    override suspend fun updateReadStatus(id: Long, isRead: Boolean) = Unit
+    override suspend fun updateArchivedStatus(id: Long, isArchived: Boolean) = Unit
+    override fun getUnreadLinks(): Flow<List<LinkEntity>> = flowOf(emptyList())
+    override fun getArchivedLinks(): Flow<List<LinkEntity>> = flowOf(emptyList())
+    override suspend fun getRandomUnreadLink(): LinkEntity? = null
 }
 
 private class EmptyTopicDao : TopicDao {

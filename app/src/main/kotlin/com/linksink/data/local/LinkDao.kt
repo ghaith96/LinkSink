@@ -46,7 +46,8 @@ interface LinkDao {
     @Query(
         """
         SELECT * FROM links 
-        WHERE (:topicId IS NULL OR topic_id = :topicId)
+        WHERE is_archived = 0
+        AND (:topicId IS NULL OR topic_id = :topicId)
         AND (:startDate IS NULL OR saved_at >= :startDate)
         AND (:endDate IS NULL OR saved_at <= :endDate)
         ORDER BY saved_at DESC
@@ -74,4 +75,19 @@ interface LinkDao {
         description: String?,
         thumbnailUrl: String?
     )
+
+    @Query("UPDATE links SET is_read = :isRead WHERE id = :id")
+    suspend fun updateReadStatus(id: Long, isRead: Boolean)
+
+    @Query("UPDATE links SET is_archived = :isArchived WHERE id = :id")
+    suspend fun updateArchivedStatus(id: Long, isArchived: Boolean)
+
+    @Query("SELECT * FROM links WHERE is_read = 0 AND is_archived = 0 ORDER BY saved_at DESC")
+    fun getUnreadLinks(): Flow<List<LinkEntity>>
+
+    @Query("SELECT * FROM links WHERE is_archived = 1 ORDER BY saved_at DESC")
+    fun getArchivedLinks(): Flow<List<LinkEntity>>
+
+    @Query("SELECT * FROM links WHERE is_read = 0 AND is_archived = 0 ORDER BY RANDOM() LIMIT 1")
+    suspend fun getRandomUnreadLink(): LinkEntity?
 }
