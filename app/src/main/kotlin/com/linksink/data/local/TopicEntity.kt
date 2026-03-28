@@ -28,7 +28,13 @@ data class TopicEntity(
     val createdAt: Long = System.currentTimeMillis(),
 
     @ColumnInfo(name = "color")
-    val color: Int? = null
+    val color: Int? = null,
+
+    @ColumnInfo(name = "emoji")
+    val emoji: String? = null,
+
+    @ColumnInfo(name = "display_order")
+    val displayOrder: Int = 0
 )
 
 fun TopicEntity.toDomain(): Topic = Topic(
@@ -38,7 +44,9 @@ fun TopicEntity.toDomain(): Topic = Topic(
     hookMode = HookMode.valueOf(hookMode),
     customWebhookUrl = customWebhookUrl,
     createdAt = Instant.ofEpochMilli(createdAt),
-    color = color
+    color = color,
+    emoji = emoji,
+    displayOrder = displayOrder
 )
 
 fun Topic.toEntity(): TopicEntity = TopicEntity(
@@ -48,7 +56,9 @@ fun Topic.toEntity(): TopicEntity = TopicEntity(
     hookMode = hookMode.name,
     customWebhookUrl = customWebhookUrl,
     createdAt = createdAt.toEpochMilli(),
-    color = color
+    color = color,
+    emoji = emoji,
+    displayOrder = displayOrder
 )
 
 data class TopicWithCount(
@@ -59,5 +69,7 @@ data class TopicWithCount(
     val customWebhookUrl: String?,
     val createdAt: Long,
     val color: Int?,
+    val emoji: String?,
+    val displayOrder: Int,
     val linkCount: Int
 )

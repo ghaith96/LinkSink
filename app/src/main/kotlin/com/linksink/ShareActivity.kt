@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.linksink.ui.ShareScreen
 import com.linksink.ui.theme.LinkSinkTheme
 import com.linksink.ui.theme.Spacing

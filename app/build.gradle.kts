@@ -107,6 +107,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Drag-to-reorder
+    implementation(libs.reorderable)
+
     // Fuzzy search
     implementation(libs.kt.fuzzy)
 

@@ -23,7 +23,7 @@ fun groupLinksByTopic(links: List<Link>, topics: List<Topic>): List<TopicSection
             val topic = topicId?.let { topicById[it] } ?: return@mapNotNull null
             TopicSection(topic = topic, links = sectionLinks)
         }
-        .sortedBy { it.topic!!.name }
+        .sortedWith(compareBy({ it.topic!!.displayOrder }, { it.topic!!.name }))
 
     // Links with null topicId OR an unknown topicId (deleted topic) go to Uncategorized
     val uncategorizedLinks = links.filter { link ->

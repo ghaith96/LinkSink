@@ -51,4 +51,10 @@ class TopicRepository(
 
     suspend fun getTopicWithLinkCount(id: Long): TopicWithCount? =
         topicDao.getWithLinkCount(id)
+
+    suspend fun getMaxDisplayOrder(): Int? =
+        topicDao.getMaxDisplayOrder()
+
+    suspend fun updateDisplayOrders(updates: List<Pair<Long, Int>>) =
+        topicDao.updateDisplayOrders(updates)
 }

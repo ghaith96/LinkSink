@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
+import com.linksink.model.displayName
 import com.linksink.ui.theme.ComponentSize
 import com.linksink.ui.theme.Spacing
 
@@ -73,7 +74,7 @@ internal fun TopicSectionHeader(
         )
 
         Text(
-            text = topic?.name ?: "Uncategorized",
+            text = topic?.displayName() ?: "Uncategorized",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),

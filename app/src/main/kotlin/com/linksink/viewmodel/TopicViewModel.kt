@@ -35,6 +35,13 @@ data class DeleteConfirmation(
     val linkCount: Int
 )
 
+/** Maps a list of topic IDs (in desired order) to (id, displayOrder) update pairs. */
+fun computeDisplayOrderUpdates(orderedIds: List<Long>): List<Pair<Long, Int>> =
+    orderedIds.mapIndexed { index, id -> id to index }
+
+/** Returns the next display order value after the current maximum, or 0 if there are no topics. */
+fun nextDisplayOrder(maxExisting: Int?): Int = if (maxExisting == null) 0 else maxExisting + 1
+
 class TopicViewModel(
     private val topicRepository: TopicRepository,
     private val discordClient: DiscordWebhookClient,
@@ -47,16 +54,37 @@ class TopicViewModel(
     val topics: StateFlow<List<Topic>> = topicRepository.getAllTopics()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun createTopic(name: String, hookMode: HookMode, customUrl: String?) {
+    fun createTopic(
+        name: String,
+        hookMode: HookMode,
+        customUrl: String?,
+        color: Int? = null,
+        emoji: String? = null
+    ) {
         viewModelScope.launch {
             try {
+                val maxOrder = topicRepository.getMaxDisplayOrder()
                 val topic = Topic(
                     name = name,
                     hookMode = hookMode,
-                    customWebhookUrl = if (hookMode == HookMode.CUSTOM) customUrl else null
+                    customWebhookUrl = if (hookMode == HookMode.CUSTOM) customUrl else null,
+                    color = color,
+                    emoji = emoji,
+                    displayOrder = nextDisplayOrder(maxOrder)
                 )
                 topicRepository.createTopic(topic)
                 _uiState.update { it.copy(error = null) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun updateTopicOrder(orderedIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                val updates = computeDisplayOrderUpdates(orderedIds)
+                topicRepository.updateDisplayOrders(updates)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }

@@ -9,7 +9,9 @@ data class Topic(
     val hookMode: HookMode = HookMode.USE_GLOBAL,
     val customWebhookUrl: String? = null,
     val createdAt: Instant = Instant.now(),
-    val color: Int? = null
+    val color: Int? = null,
+    val emoji: String? = null,
+    val displayOrder: Int = 0
 ) {
     init {
         require(name.isNotBlank()) { "Topic name cannot be blank" }
@@ -18,3 +20,7 @@ data class Topic(
         }
     }
 }
+
+/** Returns the display name prefixed with [emoji] if present, e.g. "📌 Work". */
+fun Topic.displayName(): String =
+    if (emoji != null) "$emoji $name" else name

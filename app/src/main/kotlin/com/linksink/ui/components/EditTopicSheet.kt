@@ -28,11 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.linksink.model.HookMode
+import com.linksink.model.Topic
 import com.linksink.ui.theme.ComponentSize
 import com.linksink.ui.theme.Spacing
-import com.linksink.model.Topic
 import com.linksink.viewmodel.WebhookTestResult
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +48,8 @@ internal fun EditTopicSheet(
     var name by remember(topic) { mutableStateOf(topic.name) }
     var hookMode by remember(topic) { mutableStateOf(topic.hookMode) }
     var customUrl by remember(topic) { mutableStateOf(topic.customWebhookUrl ?: "") }
+    var selectedColor by remember(topic) { mutableStateOf(topic.color) }
+    var emoji by remember(topic) { mutableStateOf(topic.emoji ?: "") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -62,6 +63,10 @@ internal fun EditTopicSheet(
             onHookModeChange = { hookMode = it },
             customUrl = customUrl,
             onCustomUrlChange = { customUrl = it },
+            selectedColor = selectedColor,
+            onColorSelected = { selectedColor = it },
+            emoji = emoji,
+            onEmojiChange = { emoji = it },
             onTestWebhook = onTestWebhook,
             testResult = testResult,
             testingWebhook = testingWebhook,
@@ -72,7 +77,9 @@ internal fun EditTopicSheet(
                         topic.copy(
                             name = name,
                             hookMode = hookMode,
-                            customWebhookUrl = customUrl.takeIf { hookMode == HookMode.CUSTOM && it.isNotBlank() }
+                            customWebhookUrl = customUrl.takeIf { hookMode == HookMode.CUSTOM && it.isNotBlank() },
+                            color = selectedColor,
+                            emoji = emoji.takeIf { it.isNotBlank() }
                         )
                     )
                 }
@@ -93,6 +100,10 @@ internal fun TopicForm(
     onHookModeChange: (HookMode) -> Unit,
     customUrl: String,
     onCustomUrlChange: (String) -> Unit,
+    selectedColor: Int?,
+    onColorSelected: (Int?) -> Unit,
+    emoji: String,
+    onEmojiChange: (String) -> Unit,
     onTestWebhook: (String) -> Unit,
     testResult: WebhookTestResult?,
     testingWebhook: Boolean,
@@ -102,6 +113,12 @@ internal fun TopicForm(
     saveButtonText: String
 ) {
     var hookModeExpanded by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
+
+    val emojiValid = isValidEmoji(emoji)
+    val canSave = name.isNotBlank()
+        && (hookMode != HookMode.CUSTOM || customUrl.isNotBlank())
+        && emojiValid
 
     Column(
         modifier = Modifier
@@ -122,6 +139,29 @@ internal fun TopicForm(
             label = { Text("Topic Name") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.lg))
+
+        OutlinedTextField(
+            value = emoji,
+            onValueChange = onEmojiChange,
+            label = { Text("Emoji (optional)") },
+            placeholder = { Text("📌") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            isError = emoji.isNotEmpty() && !emojiValid,
+            supportingText = if (emoji.isNotEmpty() && !emojiValid) {
+                { Text("Enter a single emoji") }
+            } else null
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.lg))
+
+        ColorPaletteRow(
+            selectedColor = selectedColor,
+            onColorSelected = onColorSelected,
+            onCustomClick = { showColorPicker = true }
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -244,10 +284,21 @@ internal fun TopicForm(
             Button(
                 onClick = onSave,
                 modifier = Modifier.weight(1f),
-                enabled = name.isNotBlank() && (hookMode != HookMode.CUSTOM || customUrl.isNotBlank())
+                enabled = canSave
             ) {
                 Text(saveButtonText)
             }
         }
+    }
+
+    if (showColorPicker) {
+        ColorPickerDialog(
+            initialColor = selectedColor,
+            onColorConfirmed = { color ->
+                onColorSelected(color)
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false }
+        )
     }
 }

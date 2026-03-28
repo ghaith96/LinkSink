@@ -1,7 +1,9 @@
 package com.linksink.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,13 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -40,18 +46,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.linksink.model.HookMode
-import com.linksink.ui.theme.Spacing
 import com.linksink.model.Topic
+import com.linksink.model.displayName
 import com.linksink.ui.components.EditTopicSheet
 import com.linksink.ui.components.TopicForm
+import com.linksink.ui.theme.Spacing
 import com.linksink.viewmodel.TopicViewModel
 import com.linksink.viewmodel.WebhookTestResult
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +80,22 @@ fun TopicManagementScreen(
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
+        }
+    }
+
+    val orderedTopics = remember { mutableStateListOf<Topic>() }
+    LaunchedEffect(topics) {
+        orderedTopics.clear()
+        orderedTopics.addAll(topics)
+    }
+
+    val lazyListState = rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        val fromIndex = orderedTopics.indexOfFirst { it.id == from.key }
+        val toIndex = orderedTopics.indexOfFirst { it.id == to.key }
+        if (fromIndex != -1 && toIndex != -1) {
+            orderedTopics.add(toIndex, orderedTopics.removeAt(fromIndex))
+            viewModel.updateTopicOrder(orderedTopics.map { it.id })
         }
     }
 
@@ -92,25 +120,29 @@ fun TopicManagementScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        if (topics.isEmpty()) {
+        if (orderedTopics.isEmpty()) {
             EmptyTopicsContent(
                 modifier = Modifier.padding(padding),
                 onCreateClick = { showCreateSheet = true }
             )
         } else {
             LazyColumn(
+                state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .padding(Spacing.lg),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                items(topics, key = { it.id }) { topic ->
-                    TopicCard(
-                        topic = topic,
-                        onEdit = { viewModel.selectTopic(topic) },
-                        onDelete = { viewModel.requestDeleteTopic(topic.id) }
-                    )
+                items(orderedTopics, key = { it.id }) { topic ->
+                    ReorderableItem(reorderableState, key = topic.id) {
+                        TopicCard(
+                            topic = topic,
+                            onEdit = { viewModel.selectTopic(topic) },
+                            onDelete = { viewModel.requestDeleteTopic(topic.id) },
+                            dragHandleModifier = Modifier.draggableHandle()
+                        )
+                    }
                 }
             }
         }
@@ -119,8 +151,8 @@ fun TopicManagementScreen(
     if (showCreateSheet) {
         CreateTopicSheet(
             onDismiss = { showCreateSheet = false },
-            onCreate = { name, hookMode, customUrl ->
-                viewModel.createTopic(name, hookMode, customUrl)
+            onCreate = { name, hookMode, customUrl, color, emoji ->
+                viewModel.createTopic(name, hookMode, customUrl, color, emoji)
                 showCreateSheet = false
             },
             onTestWebhook = viewModel::testWebhook,
@@ -190,7 +222,8 @@ private fun EmptyTopicsContent(
 private fun TopicCard(
     topic: Topic,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    dragHandleModifier: Modifier = Modifier
 ) {
     Card(
         modifier = Modifier
@@ -207,9 +240,28 @@ private fun TopicCard(
                 .padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = Icons.Default.DragHandle,
+                contentDescription = "Drag to reorder",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = dragHandleModifier.size(Spacing.lg)
+            )
+
+            Spacer(modifier = Modifier.width(Spacing.sm))
+
+            topic.color?.let { colorInt ->
+                Box(
+                    modifier = Modifier
+                        .size(Spacing.md)
+                        .clip(CircleShape)
+                        .background(Color(colorInt))
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = topic.name,
+                    text = topic.displayName(),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(Spacing.xs))
@@ -247,7 +299,7 @@ private fun TopicCard(
 @Composable
 private fun CreateTopicSheet(
     onDismiss: () -> Unit,
-    onCreate: (name: String, hookMode: HookMode, customUrl: String?) -> Unit,
+    onCreate: (name: String, hookMode: HookMode, customUrl: String?, color: Int?, emoji: String?) -> Unit,
     onTestWebhook: (String) -> Unit,
     testResult: WebhookTestResult?,
     testingWebhook: Boolean,
@@ -256,6 +308,8 @@ private fun CreateTopicSheet(
     var name by remember { mutableStateOf("") }
     var hookMode by remember { mutableStateOf(HookMode.USE_GLOBAL) }
     var customUrl by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Int?>(null) }
+    var emoji by remember { mutableStateOf("") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -269,13 +323,23 @@ private fun CreateTopicSheet(
             onHookModeChange = { hookMode = it },
             customUrl = customUrl,
             onCustomUrlChange = { customUrl = it },
+            selectedColor = selectedColor,
+            onColorSelected = { selectedColor = it },
+            emoji = emoji,
+            onEmojiChange = { emoji = it },
             onTestWebhook = onTestWebhook,
             testResult = testResult,
             testingWebhook = testingWebhook,
             onClearTestResult = onClearTestResult,
             onSave = {
                 if (name.isNotBlank()) {
-                    onCreate(name, hookMode, customUrl.takeIf { hookMode == HookMode.CUSTOM && it.isNotBlank() })
+                    onCreate(
+                        name,
+                        hookMode,
+                        customUrl.takeIf { hookMode == HookMode.CUSTOM && it.isNotBlank() },
+                        selectedColor,
+                        emoji.takeIf { it.isNotBlank() }
+                    )
                 }
             },
             onCancel = onDismiss,

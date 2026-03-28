@@ -21,16 +21,17 @@ class GroupLinksByTopicTest {
         syncStatus = SyncStatus.SYNCED
     )
 
-    private fun topic(id: Long, name: String) = Topic(
+    private fun topic(id: Long, name: String, displayOrder: Int = 0) = Topic(
         id = id,
         name = name,
-        hookMode = HookMode.USE_GLOBAL
+        hookMode = HookMode.USE_GLOBAL,
+        displayOrder = displayOrder
     )
 
     @Test
-    fun `groups links by topic with named sections sorted alphabetically`() {
-        val work = topic(1L, "Work")
-        val personal = topic(2L, "Personal")
+    fun `groups links by topic with named sections sorted by displayOrder then name`() {
+        val work = topic(1L, "Work", displayOrder = 0)
+        val personal = topic(2L, "Personal", displayOrder = 1)
         val links = listOf(
             link(1L, 1L),
             link(2L, 2L),
@@ -39,11 +40,24 @@ class GroupLinksByTopicTest {
         val sections = groupLinksByTopic(links, listOf(work, personal))
 
         assertEquals(2, sections.size)
-        // alphabetical: Personal first, then Work
+        // displayOrder: Work (0) first, Personal (1) second
+        assertEquals("Work", sections[0].topic?.name)
+        assertEquals(2, sections[0].links.size)
+        assertEquals("Personal", sections[1].topic?.name)
+        assertEquals(1, sections[1].links.size)
+    }
+
+    @Test
+    fun `sections with equal displayOrder fall back to alphabetical by name`() {
+        val work = topic(1L, "Work", displayOrder = 0)
+        val personal = topic(2L, "Personal", displayOrder = 0)
+        val links = listOf(link(1L, 1L), link(2L, 2L))
+        val sections = groupLinksByTopic(links, listOf(work, personal))
+
+        assertEquals(2, sections.size)
+        // same displayOrder → alphabetical: Personal before Work
         assertEquals("Personal", sections[0].topic?.name)
-        assertEquals(1, sections[0].links.size)
         assertEquals("Work", sections[1].topic?.name)
-        assertEquals(2, sections[1].links.size)
     }
 
     @Test

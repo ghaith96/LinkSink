@@ -224,6 +224,7 @@ fun LinkListScreen(
                                     link = link,
                                     topicName = linkTopic?.name,
                                     topicColor = linkTopic?.color,
+                                    topicEmoji = linkTopic?.emoji,
                                     onDelete = { viewModel.deleteLink(link) },
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
@@ -311,6 +312,7 @@ private fun TopicSectionedList(
                         link = link,
                         topicName = section.topic?.name,
                         topicColor = section.topic?.color,
+                        topicEmoji = section.topic?.emoji,
                         onDelete = { onDelete(link) },
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
@@ -362,6 +364,7 @@ private fun SwipeableLinkCard(
     link: Link,
     topicName: String?,
     topicColor: Int?,
+    topicEmoji: String? = null,
     onDelete: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -385,7 +388,7 @@ private fun SwipeableLinkCard(
         },
         enableDismissFromStartToEnd = false
     ) {
-        LinkCard(link = link, topicName = topicName, topicColor = topicColor, onClick = onClick)
+        LinkCard(link = link, topicName = topicName, topicColor = topicColor, topicEmoji = topicEmoji, onClick = onClick)
     }
 }
 
@@ -412,6 +415,7 @@ internal fun LinkCard(
     link: Link,
     topicName: String?,
     topicColor: Int?,
+    topicEmoji: String? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -470,7 +474,7 @@ internal fun LinkCard(
                         color = MaterialTheme.colorScheme.outline
                     )
                     if (topicName != null) {
-                        TopicChipSmall(topicName = topicName, color = topicColor)
+                        TopicChipSmall(topicName = topicName, color = topicColor, emoji = topicEmoji)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     SyncStatusIcon(link.syncStatus)

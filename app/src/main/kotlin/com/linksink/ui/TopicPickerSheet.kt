@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
+import com.linksink.model.displayName
 import com.linksink.ui.components.TopicChip
 import com.linksink.ui.theme.ComponentSize
 import com.linksink.ui.theme.Spacing
@@ -118,7 +119,7 @@ fun TopicPickerSheet(
                 ) {
                     items(otherTopics) { topic ->
                         ListItem(
-                            headlineContent = { Text(topic.name) },
+                            headlineContent = { Text(topic.displayName()) },
                             trailingContent = {
                                 if (topic.id == selectedTopicId) {
                                     Icon(

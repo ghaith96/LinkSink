@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
+import com.linksink.model.displayName
 import com.linksink.ui.theme.Spacing
 
 @Composable
@@ -65,7 +66,7 @@ fun TopicChip(
                 )
             }
             Text(
-                text = topic.name,
+                text = topic.displayName(),
                 style = MaterialTheme.typography.labelMedium,
                 modifier = if (topic.color != null) Modifier.padding(start = Spacing.sm) else Modifier
             )
@@ -77,8 +78,11 @@ fun TopicChip(
 fun TopicChipSmall(
     topicName: String,
     color: Int? = null,
+    emoji: String? = null,
     modifier: Modifier = Modifier
 ) {
+    val displayText = if (emoji != null) "$emoji $topicName" else topicName
+
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraSmall,
@@ -97,7 +101,7 @@ fun TopicChipSmall(
                 )
             }
             Text(
-                text = topicName,
+                text = displayText,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = if (color != null) Modifier.padding(start = Spacing.xs) else Modifier
