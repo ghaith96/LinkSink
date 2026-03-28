@@ -17,6 +17,7 @@ class SettingsStore(private val context: Context) {
     private object Keys {
         val WEBHOOK_URL = stringPreferencesKey("webhook_url")
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
+        val TOPIC_SECTION_STATES = stringPreferencesKey("topic_section_states")
     }
 
     val webhookUrl: Flow<String?> = context.dataStore.data
@@ -24,6 +25,36 @@ class SettingsStore(private val context: Context) {
 
     val isOnboardingComplete: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.ONBOARDING_COMPLETE] ?: false }
+
+    val sectionStates: Flow<Map<String, Boolean>> = context.dataStore.data
+        .map { preferences ->
+            val raw = preferences[Keys.TOPIC_SECTION_STATES] ?: return@map emptyMap()
+            SectionStateSerializer.decodeFromJson(raw)
+        }
+
+    suspend fun setSectionExpanded(key: String, expanded: Boolean) {
+        context.dataStore.edit { preferences ->
+            val current = SectionStateSerializer.decodeFromJson(
+                preferences[Keys.TOPIC_SECTION_STATES] ?: ""
+            )
+            preferences[Keys.TOPIC_SECTION_STATES] =
+                SectionStateSerializer.encodeToJson(
+                    SectionStateSerializer.withSectionExpanded(current, key, expanded)
+                )
+        }
+    }
+
+    suspend fun removeSectionState(key: String) {
+        context.dataStore.edit { preferences ->
+            val current = SectionStateSerializer.decodeFromJson(
+                preferences[Keys.TOPIC_SECTION_STATES] ?: ""
+            )
+            preferences[Keys.TOPIC_SECTION_STATES] =
+                SectionStateSerializer.encodeToJson(
+                    SectionStateSerializer.withSectionRemoved(current, key)
+                )
+        }
+    }
 
     suspend fun setWebhookUrl(url: String) {
         context.dataStore.edit { preferences ->
