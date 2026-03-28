@@ -25,7 +25,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Badge
@@ -77,9 +81,11 @@ import com.linksink.model.Topic
 import com.linksink.ui.components.DateRangePickerSheet
 import com.linksink.ui.components.EditTopicSheet
 import com.linksink.ui.components.FilterChips
+import com.linksink.ui.components.LinkFilterChips
 import com.linksink.ui.components.SearchBar
 import com.linksink.ui.components.TopicChipSmall
 import com.linksink.ui.components.TopicSectionHeader
+import com.linksink.viewmodel.LinkFilter
 import com.linksink.viewmodel.LinkListUiState
 import com.linksink.viewmodel.LinkListViewModel
 import com.linksink.viewmodel.TopicSection
@@ -93,7 +99,9 @@ import java.time.format.FormatStyle
 fun LinkListScreen(
     viewModel: LinkListViewModel,
     topicViewModel: TopicViewModel,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onArchivedClick: (() -> Unit)? = null,
+    onNotificationsClick: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -156,6 +164,24 @@ fun LinkListScreen(
                         )
                     }
 
+                    if (onArchivedClick != null) {
+                        IconButton(onClick = onArchivedClick) {
+                            Icon(
+                                imageVector = Icons.Default.Archive,
+                                contentDescription = "Archived links"
+                            )
+                        }
+                    }
+
+                    if (onNotificationsClick != null) {
+                        IconButton(onClick = onNotificationsClick) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notification settings"
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -174,6 +200,12 @@ fun LinkListScreen(
             SearchBar(
                 query = searchQuery,
                 onQueryChange = { viewModel.setSearchQuery(it) }
+            )
+
+            val linkFilter = (uiState as? LinkListUiState.Success)?.linkFilter ?: LinkFilter.ALL
+            LinkFilterChips(
+                selectedFilter = linkFilter,
+                onFilterSelected = { viewModel.setLinkFilter(it) }
             )
 
             if (topicFilter != null || dateRange != null) {
@@ -207,6 +239,13 @@ fun LinkListScreen(
                             sectionStates = sectionStates,
                             onToggleSection = { viewModel.toggleSection(it) },
                             onDelete = { viewModel.deleteLink(it) },
+                            onToggleRead = if (state.linkFilter != LinkFilter.ARCHIVED) {
+                                { viewModel.toggleReadStatus(it) }
+                            } else null,
+                            onArchive = if (state.linkFilter != LinkFilter.ARCHIVED) {
+                                { viewModel.archiveLink(it) }
+                            } else null,
+                            onOpenLink = { viewModel.openLink(it) },
                             onEditTopic = { topic -> topicViewModel.selectTopic(topic) },
                             context = context
                         )
@@ -227,7 +266,14 @@ fun LinkListScreen(
                                     topicColor = linkTopic?.color,
                                     topicEmoji = linkTopic?.emoji,
                                     onDelete = { viewModel.deleteLink(link) },
+                                    onToggleRead = if (state.linkFilter != LinkFilter.ARCHIVED) {
+                                        { viewModel.toggleReadStatus(link) }
+                                    } else null,
+                                    onArchive = if (state.linkFilter != LinkFilter.ARCHIVED) {
+                                        { viewModel.archiveLink(link) }
+                                    } else null,
                                     onClick = {
+                                        viewModel.openLink(link)
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
                                         context.startActivity(intent)
                                     }
@@ -275,6 +321,9 @@ private fun TopicSectionedList(
     sectionStates: Map<String, Boolean>,
     onToggleSection: (String) -> Unit,
     onDelete: (Link) -> Unit,
+    onToggleRead: ((Link) -> Unit)? = null,
+    onArchive: ((Link) -> Unit)? = null,
+    onOpenLink: (Link) -> Unit,
     onEditTopic: (Topic) -> Unit,
     context: android.content.Context
 ) {
@@ -315,7 +364,10 @@ private fun TopicSectionedList(
                         topicColor = section.topic?.color,
                         topicEmoji = section.topic?.emoji,
                         onDelete = { onDelete(link) },
+                        onToggleRead = onToggleRead?.let { { it(link) } },
+                        onArchive = onArchive?.let { { it(link) } },
                         onClick = {
+                            onOpenLink(link)
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
                             context.startActivity(intent)
                         },
@@ -361,22 +413,29 @@ private fun TopicFilterDropdown(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeableLinkCard(
+internal fun SwipeableLinkCard(
     link: Link,
     topicName: String?,
     topicColor: Int?,
     topicEmoji: String? = null,
     onDelete: () -> Unit,
+    onToggleRead: (() -> Unit)? = null,
+    onArchive: (() -> Unit)? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
+            when (value) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true
+                }
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onArchive?.invoke()
+                    true
+                }
+                else -> false
             }
         }
     )
@@ -385,11 +444,23 @@ private fun SwipeableLinkCard(
         state = dismissState,
         modifier = modifier,
         backgroundContent = {
-            SwipeDeleteBackground()
+            val direction = dismissState.dismissDirection
+            when (direction) {
+                SwipeToDismissBoxValue.EndToStart -> SwipeDeleteBackground()
+                SwipeToDismissBoxValue.StartToEnd -> SwipeArchiveBackground()
+                else -> {}
+            }
         },
-        enableDismissFromStartToEnd = false
+        enableDismissFromStartToEnd = onArchive != null
     ) {
-        LinkCard(link = link, topicName = topicName, topicColor = topicColor, topicEmoji = topicEmoji, onClick = onClick)
+        LinkCard(
+            link = link,
+            topicName = topicName,
+            topicColor = topicColor,
+            topicEmoji = topicEmoji,
+            onToggleRead = onToggleRead,
+            onClick = onClick
+        )
     }
 }
 
@@ -412,11 +483,30 @@ private fun SwipeDeleteBackground() {
 }
 
 @Composable
+private fun SwipeArchiveBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.tertiaryContainer),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Icon(
+            imageVector = Icons.Default.Archive,
+            contentDescription = "Archive",
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.padding(start = Spacing.xl)
+        )
+    }
+}
+
+@Composable
 internal fun LinkCard(
     link: Link,
     topicName: String?,
     topicColor: Int?,
     topicEmoji: String? = null,
+    onToggleRead: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -478,7 +568,27 @@ internal fun LinkCard(
                         TopicChipSmall(topicName = topicName, color = topicColor, emoji = topicEmoji)
                     }
                     Spacer(modifier = Modifier.weight(1f))
+                    
+                    if (link.isRead) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Read",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    
                     SyncStatusIcon(link.syncStatus)
+                }
+            }
+            
+            if (onToggleRead != null) {
+                IconButton(onClick = onToggleRead) {
+                    Icon(
+                        imageVector = if (link.isRead) Icons.Default.RadioButtonUnchecked else Icons.Default.CheckCircle,
+                        contentDescription = if (link.isRead) "Mark as unread" else "Mark as read",
+                        tint = if (link.isRead) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -593,7 +703,7 @@ private fun StateIllustration(
 }
 
 @Composable
-private fun EmptyContent(
+internal fun EmptyContent(
     message: String,
     modifier: Modifier = Modifier
 ) {

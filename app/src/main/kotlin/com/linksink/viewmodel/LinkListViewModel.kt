@@ -19,6 +19,19 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class LinkFilter {
+    ALL,
+    UNREAD,
+    ARCHIVED
+}
+
+private data class Quad<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
+
 sealed interface LinkListUiState {
     data object Loading : LinkListUiState
     data class Success(
@@ -27,10 +40,11 @@ sealed interface LinkListUiState {
         val searchQuery: String = "",
         val topicFilter: Long? = null,
         val dateRange: DateRange? = null,
+        val linkFilter: LinkFilter = LinkFilter.ALL,
         val topicSections: List<TopicSection> = emptyList()
     ) : LinkListUiState {
         val hasActiveFilters: Boolean get() =
-            searchQuery.isNotEmpty() || topicFilter != null || dateRange != null
+            searchQuery.isNotEmpty() || topicFilter != null || dateRange != null || linkFilter != LinkFilter.ALL
     }
     data class Empty(val message: String = "No links saved yet") : LinkListUiState
     data class Error(val message: String) : LinkListUiState
@@ -52,8 +66,13 @@ class LinkListViewModel(
     private val _dateRange = MutableStateFlow<DateRange?>(null)
     val dateRange: StateFlow<DateRange?> = _dateRange.asStateFlow()
 
+    private val _linkFilter = MutableStateFlow(LinkFilter.ALL)
+    val linkFilter: StateFlow<LinkFilter> = _linkFilter.asStateFlow()
+
     private val _uiState = MutableStateFlow<LinkListUiState>(LinkListUiState.Loading)
     val uiState: StateFlow<LinkListUiState> = _uiState.asStateFlow()
+
+    private var loadLinksJob: kotlinx.coroutines.Job? = null
 
     val topics: StateFlow<List<Topic>> = topicRepository.getAllTopics()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -66,27 +85,40 @@ class LinkListViewModel(
     }
 
     private fun loadLinks() {
-        viewModelScope.launch {
+        loadLinksJob?.cancel()
+        loadLinksJob = viewModelScope.launch {
             combine(
                 _searchQuery,
                 _topicFilter,
-                _dateRange
-            ) { query, topic, dates ->
-                Triple(query, topic, dates)
-            }.flatMapLatest { (query, topic, dates) ->
+                _dateRange,
+                _linkFilter
+            ) { query, topic, dates, filter ->
+                Quad(query, topic, dates, filter)
+            }.flatMapLatest { (query, topic, dates, filter) ->
+                val linksFlow = when (filter) {
+                    LinkFilter.ALL -> repository.searchLinks(query, topic, dates)
+                    LinkFilter.UNREAD -> repository.getUnreadLinks()
+                    LinkFilter.ARCHIVED -> repository.getArchivedLinks()
+                }
+                
                 combine(
-                    repository.searchLinks(query, topic, dates),
+                    linksFlow,
                     repository.getPendingSyncCount(),
                     topics
                 ) { links, pendingCount, topicList ->
                     if (links.isEmpty()) {
-                        if (query.isNotEmpty() || topic != null || dates != null) {
-                            LinkListUiState.Empty("No links match your filters")
-                        } else {
-                            LinkListUiState.Empty()
+                        val filterMessage = when (filter) {
+                            LinkFilter.UNREAD -> "No unread links"
+                            LinkFilter.ARCHIVED -> "No archived links"
+                            LinkFilter.ALL -> if (query.isNotEmpty() || topic != null || dates != null) {
+                                "No links match your filters"
+                            } else {
+                                "No links saved yet"
+                            }
                         }
+                        LinkListUiState.Empty(filterMessage)
                     } else {
-                        val sections = if (query.isBlank() && topic == null && dates == null) {
+                        val sections = if (query.isBlank() && topic == null && dates == null && filter == LinkFilter.ALL) {
                             groupLinksByTopic(links, topicList)
                         } else {
                             emptyList()
@@ -97,6 +129,7 @@ class LinkListViewModel(
                             searchQuery = query,
                             topicFilter = topic,
                             dateRange = dates,
+                            linkFilter = filter,
                             topicSections = sections
                         )
                     }
@@ -140,11 +173,40 @@ class LinkListViewModel(
         _searchQuery.value = ""
         _topicFilter.value = null
         _dateRange.value = null
+        _linkFilter.value = LinkFilter.ALL
+    }
+
+    fun setLinkFilter(filter: LinkFilter) {
+        _linkFilter.value = filter
     }
 
     fun deleteLink(link: Link) {
         viewModelScope.launch {
             repository.deleteLink(link.id)
+        }
+    }
+
+    fun toggleReadStatus(link: Link) {
+        viewModelScope.launch {
+            repository.toggleReadStatus(link.id)
+        }
+    }
+
+    fun archiveLink(link: Link) {
+        viewModelScope.launch {
+            repository.archiveLink(link.id)
+        }
+    }
+
+    fun unarchiveLink(link: Link) {
+        viewModelScope.launch {
+            repository.unarchiveLink(link.id)
+        }
+    }
+
+    fun openLink(link: Link) {
+        viewModelScope.launch {
+            repository.openLink(link.id)
         }
     }
 

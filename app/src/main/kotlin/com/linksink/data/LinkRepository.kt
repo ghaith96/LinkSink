@@ -151,6 +151,54 @@ class LinkRepository(
         }
     }
 
+    suspend fun markAsRead(linkId: Long) {
+        linkDao.updateReadStatus(linkId, isRead = true)
+    }
+
+    suspend fun markAsUnread(linkId: Long) {
+        linkDao.updateReadStatus(linkId, isRead = false)
+    }
+
+    suspend fun toggleReadStatus(linkId: Long) {
+        val link = linkDao.getLinkById(linkId)
+        if (link != null) {
+            linkDao.updateReadStatus(linkId, !link.isRead)
+        }
+    }
+
+    suspend fun archiveLink(linkId: Long) {
+        linkDao.updateArchivedStatus(linkId, isArchived = true)
+    }
+
+    suspend fun unarchiveLink(linkId: Long) {
+        linkDao.updateArchivedStatus(linkId, isArchived = false)
+    }
+
+    fun getUnreadLinks(): Flow<List<Link>> {
+        return linkDao.getUnreadLinks().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    fun getArchivedLinks(): Flow<List<Link>> {
+        return linkDao.getArchivedLinks().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    suspend fun getRandomUnreadLink(): Link? {
+        return linkDao.getRandomUnreadLink()?.toDomain()
+    }
+
+    suspend fun openLink(linkId: Long): String? {
+        val entity = linkDao.getLinkById(linkId)
+        if (entity != null) {
+            markAsRead(linkId)
+            return entity.url
+        }
+        return null
+    }
+
     suspend fun syncPendingLinks(): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val syncSettings = settingsStore.syncSettings.first()
