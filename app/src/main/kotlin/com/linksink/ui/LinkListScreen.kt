@@ -2,6 +2,9 @@ package com.linksink.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -293,11 +296,15 @@ private fun TopicSectionedList(
                 }
             }
 
-            if (expanded) {
-                items(
-                    items = section.links,
-                    key = { "link_${it.id}" }
-                ) { link ->
+            items(
+                items = section.links,
+                key = { "link_${it.id}" }
+            ) { link ->
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
                     SwipeableLinkCard(
                         link = link,
                         topicName = section.topic?.name,
