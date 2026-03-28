@@ -14,7 +14,13 @@ Features:
 • Local-first architecture - your data stays on your device
 • Works offline with background sync when connected
 • Material You theming that adapts to your system colors
-• Clean, minimal interface designed for quick link capture
+• Progressive UI - Calm default view with collapsible search and unified filtering
+• Status Indicators - Icon-based status tracking for Unread / Read / Archived
+• Swipe-to-Unarchive - Effortlessly manage your archived items
+• Smart Sync Visibility - Banners for pending syncs only when needed
+• Progressive Topic Editing - Edit topic details via long-press on headers
+• Optimized Layouts - Reduced visual noise with smarter sync icons
+• Architectural Polish - Enhanced responsiveness and testability
 
 Topic Webhooks:
 • LOCAL_ONLY - Keep links private, no Discord sync

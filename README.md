@@ -10,17 +10,15 @@ LinkSink is a simple, privacy-focused Android app for saving links from any app 
 - **Topics** - Organize links into topics with custom webhook settings
 - **Topic customization** - Add emoji, color, and ordering to topics
 - **Discord sync** - Automatically post saved links to Discord channels via webhooks
-- **Fuzzy search** - Find links quickly with typo-tolerant search across URLs and titles
-- **Date filtering** - Filter links by Today, This Week, or This Month
-- **Read/unread tracking** - Toggle status manually, auto-marks read when you open a link
-- **Archiving** - Swipe to archive links and browse archived items separately
-- **Smart filtering** - Filter by All / Unread / Archived
-- **Link reminders** - Optional notifications that surface a random unread link
-- **Link metadata** - Auto-fetch title, description, and thumbnail from URLs
-- **Local-first** - Your data stays on your device with offline support
-- **Background sync** - Links sync automatically when you're back online
-- **Material You** - Dynamic theming that adapts to your system colors
-- **Swipe to manage** - Swipe to delete or archive
+- **Progressive UI** - Calm, scannable default view with progressive disclosure for search and filters
+- **Consolidated Filters** - Topic and date selection in a single, unified filter entry point
+- **Status Indicator System** - Clear icons and colors for Unread / Read / Archived status
+- **Swipe-to-Unarchive** - Effortlessly manage archived items with updated swipe actions
+- **Improved Sync Visibility** - Dedicated banners for pending syncs only when relevant
+- **Search & Filter Refinements** - Collapsible search bar and smarter row layouts to reduce visual noise
+- **Topic Editing** - Edit topic details via long-press on section headers
+- **Architectural Polish** - Refactored codebase for better responsiveness and testability
+- **Date filtering** - Filter links by Today, This Week, or This Month within the new filter sheet
 
 ### Topic Webhook Modes
 

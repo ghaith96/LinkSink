@@ -1,0 +1,14 @@
+v1.3.0 - UI/UX Overhaul & Progressive Disclosure
+
+New Features:
+• Consolidated Filters - Topic and date selection in one bottom sheet
+• Progressive Search - Collapsible search bar that expands on demand
+• Status Indicators - Clearer icons and colors for Unread / Read / Archived
+• Smart Row Layouts - Reduced visual noise with sync status icons
+• Improved Swipe - Swipe-to-unarchive support from the archived view
+• Long-press to Edit - Edit topic details directly from section headers
+
+Improvements:
+• Architectural refactor for better responsiveness and testability
+• Enhanced sync state visibility with a dedicated banner
+• Polished spacing and design tokens for a calmer experience
