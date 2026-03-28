@@ -1,0 +1,14 @@
+v1.2.0 - Read/Archive + Reminders
+
+New Features:
+• Read/unread tracking - Toggle manually, auto-mark on open
+• Archiving - Swipe to archive links and browse archived items
+• Link filters - All / Unread / Archived
+• Link reminders - Optional notifications that surface random unread links
+• Topic customization - Emoji, color, and display order
+• Topic sections - Collapsible grouped layout on the main list
+
+Improvements:
+• UI polish and design tokens for more consistent spacing/typography
+• Better background behavior via WorkManager scheduling
+

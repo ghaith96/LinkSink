@@ -8,14 +8,19 @@ LinkSink is a simple, privacy-focused Android app for saving links from any app 
 
 - **Share from anywhere** - Use Android's share menu to save links from any app
 - **Topics** - Organize links into topics with custom webhook settings
+- **Topic customization** - Add emoji, color, and ordering to topics
 - **Discord sync** - Automatically post saved links to Discord channels via webhooks
 - **Fuzzy search** - Find links quickly with typo-tolerant search across URLs and titles
 - **Date filtering** - Filter links by Today, This Week, or This Month
+- **Read/unread tracking** - Toggle status manually, auto-marks read when you open a link
+- **Archiving** - Swipe to archive links and browse archived items separately
+- **Smart filtering** - Filter by All / Unread / Archived
+- **Link reminders** - Optional notifications that surface a random unread link
 - **Link metadata** - Auto-fetch title, description, and thumbnail from URLs
 - **Local-first** - Your data stays on your device with offline support
 - **Background sync** - Links sync automatically when you're back online
 - **Material You** - Dynamic theming that adapts to your system colors
-- **Swipe to delete** - Clean gesture-based link management
+- **Swipe to manage** - Swipe to delete or archive
 
 ### Topic Webhook Modes
 
@@ -84,7 +89,7 @@ LinkSink follows modern Android architecture patterns:
 - **Room** for local database
 - **DataStore** for preferences
 - **Ktor** for HTTP client
-- **WorkManager** for background sync
+- **WorkManager** for background sync and reminders
 
 ## Requirements
 
