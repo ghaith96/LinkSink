@@ -231,7 +231,7 @@ fun LinkListScreen(
                 }
 
                 is LinkListUiState.Error -> {
-                    ErrorContent(message = state.message)
+                    ErrorContent(message = state.message, onRetry = { viewModel.refresh() })
                 }
             }
         }
@@ -551,6 +551,29 @@ private fun SyncStatusIcon(status: SyncStatus) {
 }
 
 @Composable
+private fun StateIllustration(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    containerColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(88.dp)
+            .clip(CircleShape)
+            .background(containerColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(44.dp),
+            tint = iconTint
+        )
+    }
+}
+
+@Composable
 private fun EmptyContent(
     message: String,
     modifier: Modifier = Modifier
@@ -560,25 +583,26 @@ private fun EmptyContent(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.LinkOff,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.outline
+            StateIllustration(
+                icon = Icons.Default.LinkOff,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconTint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.outline
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Share a link from any app to get started",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -587,16 +611,42 @@ private fun EmptyContent(
 @Composable
 private fun ErrorContent(
     message: String,
+    onRetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            StateIllustration(
+                icon = Icons.Default.CloudOff,
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                iconTint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Something went wrong",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (onRetry != null) {
+                Spacer(modifier = Modifier.height(24.dp))
+                androidx.compose.material3.Button(onClick = onRetry) {
+                    Text("Retry")
+                }
+            }
+        }
     }
 }
 

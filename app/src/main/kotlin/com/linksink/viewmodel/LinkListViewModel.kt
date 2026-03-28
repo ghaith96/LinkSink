@@ -153,4 +153,9 @@ class LinkListViewModel(
             repository.syncPendingLinks()
         }
     }
+
+    fun refresh() {
+        _uiState.value = LinkListUiState.Loading
+        loadLinks()
+    }
 }
