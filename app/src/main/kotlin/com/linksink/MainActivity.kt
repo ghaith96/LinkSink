@@ -32,7 +32,8 @@ class MainActivity : ComponentActivity() {
 
             viewModel = LinkListViewModel(
                 repository = app.repository,
-                topicRepository = app.topicRepository
+                topicRepository = app.topicRepository,
+                settingsStore = app.settingsStore
             )
 
             setContent {

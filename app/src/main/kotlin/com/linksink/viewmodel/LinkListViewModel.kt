@@ -3,6 +3,7 @@ package com.linksink.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.linksink.data.LinkRepository
+import com.linksink.data.SettingsStore
 import com.linksink.data.TopicRepository
 import com.linksink.model.DateRange
 import com.linksink.model.Link
@@ -25,7 +26,8 @@ sealed interface LinkListUiState {
         val pendingCount: Int,
         val searchQuery: String = "",
         val topicFilter: Long? = null,
-        val dateRange: DateRange? = null
+        val dateRange: DateRange? = null,
+        val topicSections: List<TopicSection> = emptyList()
     ) : LinkListUiState {
         val hasActiveFilters: Boolean get() =
             searchQuery.isNotEmpty() || topicFilter != null || dateRange != null
@@ -37,7 +39,8 @@ sealed interface LinkListUiState {
 @OptIn(ExperimentalCoroutinesApi::class)
 class LinkListViewModel(
     private val repository: LinkRepository,
-    private val topicRepository: TopicRepository
+    private val topicRepository: TopicRepository,
+    private val settingsStore: SettingsStore
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -55,6 +58,9 @@ class LinkListViewModel(
     val topics: StateFlow<List<Topic>> = topicRepository.getAllTopics()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val sectionStates: StateFlow<Map<String, Boolean>> = settingsStore.sectionStates
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     init {
         loadLinks()
     }
@@ -70,8 +76,9 @@ class LinkListViewModel(
             }.flatMapLatest { (query, topic, dates) ->
                 combine(
                     repository.searchLinks(query, topic, dates),
-                    repository.getPendingSyncCount()
-                ) { links, pendingCount ->
+                    repository.getPendingSyncCount(),
+                    topics
+                ) { links, pendingCount, topicList ->
                     if (links.isEmpty()) {
                         if (query.isNotEmpty() || topic != null || dates != null) {
                             LinkListUiState.Empty("No links match your filters")
@@ -79,12 +86,18 @@ class LinkListViewModel(
                             LinkListUiState.Empty()
                         }
                     } else {
+                        val sections = if (query.isBlank() && topic == null && dates == null) {
+                            groupLinksByTopic(links, topicList)
+                        } else {
+                            emptyList()
+                        }
                         LinkListUiState.Success(
                             links = links,
                             pendingCount = pendingCount,
                             searchQuery = query,
                             topicFilter = topic,
-                            dateRange = dates
+                            dateRange = dates,
+                            topicSections = sections
                         )
                     }
                 }
@@ -95,6 +108,19 @@ class LinkListViewModel(
             }.collect { state ->
                 _uiState.value = state
             }
+        }
+    }
+
+    fun toggleSection(key: String) {
+        viewModelScope.launch {
+            val current = sectionStates.value[key] ?: true
+            settingsStore.setSectionExpanded(key, !current)
+        }
+    }
+
+    fun setSectionExpanded(key: String, expanded: Boolean) {
+        viewModelScope.launch {
+            settingsStore.setSectionExpanded(key, expanded)
         }
     }
 
