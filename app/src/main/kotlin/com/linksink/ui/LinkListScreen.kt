@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Badge
@@ -542,6 +543,11 @@ private fun SyncStatusIcon(status: SyncStatus) {
             Icons.Default.CloudSync,
             MaterialTheme.colorScheme.primary,
             "Synced"
+        )
+        SyncStatus.LOCAL_ONLY -> Triple(
+            Icons.Default.Lock,
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            "Local only"
         )
         SyncStatus.PENDING -> Triple(
             Icons.Default.Sync,

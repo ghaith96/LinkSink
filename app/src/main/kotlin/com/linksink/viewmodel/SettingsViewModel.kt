@@ -2,16 +2,20 @@ package com.linksink.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.linksink.data.AppSettingsStore
 import com.linksink.data.SettingsStore
 import com.linksink.data.remote.DiscordWebhookClient
+import com.linksink.sync.providers.SyncProviderId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
+    val providerId: String = SyncProviderId.NONE,
+    val syncEnabled: Boolean = false,
     val webhookUrl: String = "",
     val isValidUrl: Boolean = false,
     val isTesting: Boolean = false,
@@ -27,7 +31,7 @@ sealed interface TestResult {
 }
 
 class SettingsViewModel(
-    private val settingsStore: SettingsStore,
+    private val settingsStore: AppSettingsStore,
     private val discordClient: DiscordWebhookClient
 ) : ViewModel() {
 
@@ -40,13 +44,22 @@ class SettingsViewModel(
 
     private fun loadSettings() {
         viewModelScope.launch {
-            val currentUrl = settingsStore.webhookUrl.first() ?: ""
-            _uiState.update {
-                it.copy(
-                    webhookUrl = currentUrl,
-                    isValidUrl = SettingsStore.isValidWebhookUrl(currentUrl),
-                    isLoading = false
-                )
+            combine(
+                settingsStore.webhookUrl,
+                settingsStore.syncSettings
+            ) { url, sync ->
+                url to sync
+            }.collect { (url, sync) ->
+                val currentUrl = url ?: ""
+                _uiState.update {
+                    it.copy(
+                        providerId = sync.providerId,
+                        syncEnabled = sync.enabled,
+                        webhookUrl = currentUrl,
+                        isValidUrl = SettingsStore.isValidWebhookUrl(currentUrl),
+                        isLoading = false
+                    )
+                }
             }
         }
     }
@@ -93,6 +106,8 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             settingsStore.setWebhookUrl(url)
+            settingsStore.setSyncProviderId(SyncProviderId.DISCORD_WEBHOOK)
+            settingsStore.setSyncEnabled(true)
             settingsStore.setOnboardingComplete(true)
             _uiState.update {
                 it.copy(
@@ -106,6 +121,8 @@ class SettingsViewModel(
     fun clearSettings() {
         viewModelScope.launch {
             settingsStore.clearWebhookUrl()
+            settingsStore.setSyncEnabled(false)
+            settingsStore.setSyncProviderId(SyncProviderId.NONE)
             _uiState.update {
                 it.copy(
                     webhookUrl = "",
@@ -114,6 +131,21 @@ class SettingsViewModel(
                     saveSuccess = false
                 )
             }
+        }
+    }
+
+    fun setProvider(providerId: String) {
+        viewModelScope.launch {
+            settingsStore.setSyncProviderId(providerId)
+            if (providerId == SyncProviderId.NONE) {
+                settingsStore.setSyncEnabled(false)
+            }
+        }
+    }
+
+    fun setSyncEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsStore.setSyncEnabled(enabled)
         }
     }
 

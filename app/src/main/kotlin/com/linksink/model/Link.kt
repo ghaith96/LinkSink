@@ -4,6 +4,7 @@ import java.time.Instant
 
 enum class SyncStatus {
     PENDING,
+    LOCAL_ONLY,
     SYNCED,
     FAILED
 }

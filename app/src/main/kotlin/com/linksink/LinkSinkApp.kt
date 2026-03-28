@@ -13,12 +13,21 @@ import com.linksink.data.local.LinkDatabase
 import com.linksink.data.remote.DiscordWebhookClient
 import com.linksink.sync.SyncManager
 import com.linksink.sync.SyncWorker
+import com.linksink.sync.SchedulingDecision
+import com.linksink.sync.SchedulingPolicy
+import com.linksink.sync.providers.DiscordWebhookClientApi
+import com.linksink.sync.providers.DiscordWebhookSyncProvider
+import com.linksink.sync.providers.NoneSyncProvider
+import com.linksink.sync.providers.SyncProviderRegistry
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 class LinkSinkApp : Application(), DefaultLifecycleObserver {
@@ -42,6 +51,7 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
     private lateinit var metadataFetcher: MetadataFetcher
     private lateinit var httpClient: HttpClient
     private val applicationScope = CoroutineScope(SupervisorJob())
+    private var lastSchedulingDecision: SchedulingDecision? = null
 
     override fun onCreate() {
         super<Application>.onCreate()
@@ -65,13 +75,22 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
             topicDao = database.topicDao()
         )
 
+        val providerRegistry = SyncProviderRegistry(
+            providers = listOf(
+                NoneSyncProvider(),
+                DiscordWebhookSyncProvider(
+                    DiscordWebhookClientApi(discordClient)
+                )
+            )
+        )
+
         repository = LinkRepository(
             linkDao = database.linkDao(),
             topicDao = database.topicDao(),
-            discordClient = discordClient,
             settingsStore = settingsStore,
             metadataFetcher = metadataFetcher,
-            applicationScope = applicationScope
+            applicationScope = applicationScope,
+            providerRegistry = providerRegistry
         )
 
         syncManager = SyncManager(
@@ -81,15 +100,33 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
-        SyncWorker.enqueuePeriodicSync(this)
+        applicationScope.launch {
+            settingsStore.syncSettings.collect { syncSettings ->
+                val decision = SchedulingPolicy.decide(syncSettings)
+                if (decision == lastSchedulingDecision) return@collect
+                lastSchedulingDecision = decision
+
+                when (decision) {
+                    SchedulingDecision.EnsurePeriodic -> SyncWorker.enqueuePeriodicSync(this@LinkSinkApp)
+                    SchedulingDecision.CancelPeriodic -> SyncWorker.cancelPeriodicSync(this@LinkSinkApp)
+                }
+            }
+        }
 
         Log.d(TAG, "LinkSinkApp initialized")
     }
 
     override fun onStart(owner: LifecycleOwner) {
         Log.d(TAG, "App foregrounded, starting sync")
-        syncManager.startNetworkObserver()
-        syncManager.triggerSync()
+        applicationScope.launch {
+            val decision = SchedulingPolicy.decide(settingsStore.syncSettings.first())
+            if (decision == SchedulingDecision.EnsurePeriodic) {
+                syncManager.startNetworkObserver()
+                syncManager.triggerSync()
+            } else {
+                syncManager.stopNetworkObserver()
+            }
+        }
     }
 
     override fun onStop(owner: LifecycleOwner) {

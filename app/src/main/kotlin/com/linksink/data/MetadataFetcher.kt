@@ -10,7 +10,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 class MetadataFetcher(
     private val httpClient: HttpClient
-) {
+) : MetadataFetcherPort {
     companion object {
         private const val FETCH_TIMEOUT_MS = 5000L
         private const val MAX_RETRIES = 3
@@ -45,7 +45,7 @@ class MetadataFetcher(
             """<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']""".toRegex(RegexOption.IGNORE_CASE)
     }
 
-    suspend fun fetch(url: String): Result<LinkMetadata> = withContext(Dispatchers.IO) {
+    override suspend fun fetch(url: String): Result<LinkMetadata> = withContext(Dispatchers.IO) {
         var lastException: Exception? = null
 
         repeat(MAX_RETRIES) { attempt ->

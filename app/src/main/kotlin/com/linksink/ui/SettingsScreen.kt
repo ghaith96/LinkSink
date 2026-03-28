@@ -20,7 +20,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -36,11 +40,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.linksink.sync.providers.SyncProviderId
 import com.linksink.ui.theme.ComponentSize
 import com.linksink.ui.theme.Spacing
 import com.linksink.viewmodel.SettingsUiState
@@ -81,7 +88,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("LinkSink Setup") }
+                title = { Text("Sync") }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -99,6 +106,8 @@ fun SettingsScreen(
         } else {
             SettingsContent(
                 uiState = uiState,
+                onProviderChanged = viewModel::setProvider,
+                onSyncEnabledChanged = viewModel::setSyncEnabled,
                 onWebhookUrlChanged = viewModel::onWebhookUrlChanged,
                 onPasteClicked = {
                     clipboardManager.getText()?.text?.let { text ->
@@ -118,6 +127,8 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     uiState: SettingsUiState,
+    onProviderChanged: (String) -> Unit,
+    onSyncEnabledChanged: (Boolean) -> Unit,
     onWebhookUrlChanged: (String) -> Unit,
     onPasteClicked: () -> Unit,
     onClearClicked: () -> Unit,
@@ -126,6 +137,8 @@ private fun SettingsContent(
     onManageTopicsClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
+    var providerMenuOpen by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -136,105 +149,181 @@ private fun SettingsContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Column(
-                modifier = Modifier.padding(Spacing.lg)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 Text(
-                    text = "How to get a Discord Webhook URL",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    text = "Provider",
+                    style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(Spacing.sm))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    OutlinedButton(onClick = { providerMenuOpen = true }) {
+                        val label = when (uiState.providerId) {
+                            SyncProviderId.DISCORD_WEBHOOK -> "Discord Webhook"
+                            else -> "None (local only)"
+                        }
+                        Text(label)
+                    }
+
+                    Switch(
+                        checked = uiState.syncEnabled,
+                        onCheckedChange = onSyncEnabledChanged,
+                        enabled = uiState.providerId != SyncProviderId.NONE &&
+                            (uiState.providerId != SyncProviderId.DISCORD_WEBHOOK || uiState.isValidUrl)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = providerMenuOpen,
+                    onDismissRequest = { providerMenuOpen = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("None (local only)") },
+                        onClick = {
+                            providerMenuOpen = false
+                            onProviderChanged(SyncProviderId.NONE)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Discord Webhook") },
+                        onClick = {
+                            providerMenuOpen = false
+                            onProviderChanged(SyncProviderId.DISCORD_WEBHOOK)
+                        }
+                    )
+                }
+
+                HorizontalDivider()
+
                 Text(
-                    text = "1. Open Discord and go to your server\n" +
-                            "2. Right-click a channel → Edit Channel\n" +
-                            "3. Go to Integrations → Webhooks\n" +
-                            "4. Click 'New Webhook' and copy the URL",
+                    text = if (uiState.providerId == SyncProviderId.NONE) {
+                        "Local-only mode: links stay on your device."
+                    } else {
+                        "Enable sync to post links to your selected provider."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        OutlinedTextField(
-            value = uiState.webhookUrl,
-            onValueChange = onWebhookUrlChanged,
-            label = { Text("Discord Webhook URL") },
-            placeholder = { Text("https://discord.com/api/webhooks/...") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            isError = uiState.webhookUrl.isNotEmpty() && !uiState.isValidUrl,
-            supportingText = {
-                if (uiState.webhookUrl.isNotEmpty() && !uiState.isValidUrl) {
-                    Text("Invalid Discord webhook URL format")
+        if (uiState.providerId == SyncProviderId.DISCORD_WEBHOOK) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(Spacing.lg)
+                ) {
+                    Text(
+                        text = "How to get a Discord Webhook URL",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Text(
+                        text = "1. Open Discord and go to your server\n" +
+                                "2. Right-click a channel → Edit Channel\n" +
+                                "3. Go to Integrations → Webhooks\n" +
+                                "4. Click 'New Webhook' and copy the URL",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
-            },
-            trailingIcon = {
-                Row {
-                    IconButton(onClick = onPasteClicked) {
-                        Icon(
-                            imageVector = Icons.Default.ContentPaste,
-                            contentDescription = "Paste"
-                        )
+            }
+        }
+
+        if (uiState.providerId == SyncProviderId.DISCORD_WEBHOOK) {
+            OutlinedTextField(
+                value = uiState.webhookUrl,
+                onValueChange = onWebhookUrlChanged,
+                label = { Text("Discord Webhook URL") },
+                placeholder = { Text("https://discord.com/api/webhooks/...") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                isError = uiState.webhookUrl.isNotEmpty() && !uiState.isValidUrl,
+                supportingText = {
+                    if (uiState.webhookUrl.isNotEmpty() && !uiState.isValidUrl) {
+                        Text("Invalid Discord webhook URL format")
                     }
-                    if (uiState.webhookUrl.isNotEmpty()) {
-                        IconButton(onClick = onClearClicked) {
+                },
+                trailingIcon = {
+                    Row {
+                        IconButton(onClick = onPasteClicked) {
                             Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear"
+                                imageVector = Icons.Default.ContentPaste,
+                                contentDescription = "Paste"
                             )
+                        }
+                        if (uiState.webhookUrl.isNotEmpty()) {
+                            IconButton(onClick = onClearClicked) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear"
+                                )
+                            }
                         }
                     }
                 }
-            }
-        )
+            )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
-            OutlinedButton(
-                onClick = onTestClicked,
-                enabled = uiState.isValidUrl && !uiState.isTesting,
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                if (uiState.isTesting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .height(ComponentSize.ProgressIndicator)
-                            .width(ComponentSize.ProgressIndicator),
-                        strokeWidth = ComponentSize.ProgressStrokeWidth
+                OutlinedButton(
+                    onClick = onTestClicked,
+                    enabled = uiState.isValidUrl && !uiState.isTesting,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (uiState.isTesting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .height(ComponentSize.ProgressIndicator)
+                                .width(ComponentSize.ProgressIndicator),
+                            strokeWidth = ComponentSize.ProgressStrokeWidth
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                    }
+                    Text("Test Connection")
+                }
+
+                Button(
+                    onClick = onSaveClicked,
+                    enabled = uiState.isValidUrl && !uiState.isSaving,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .height(ComponentSize.ProgressIndicator)
+                                .width(ComponentSize.ProgressIndicator),
+                            strokeWidth = ComponentSize.ProgressStrokeWidth,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                    }
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text("Save")
                 }
-                Text("Test Connection")
-            }
-
-            Button(
-                onClick = onSaveClicked,
-                enabled = uiState.isValidUrl && !uiState.isSaving,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .height(ComponentSize.ProgressIndicator)
-                            .width(ComponentSize.ProgressIndicator),
-                        strokeWidth = ComponentSize.ProgressStrokeWidth,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(Spacing.sm))
-                }
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text("Save")
             }
         }
 

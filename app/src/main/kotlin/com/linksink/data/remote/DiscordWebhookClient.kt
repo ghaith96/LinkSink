@@ -15,7 +15,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import java.time.format.DateTimeFormatter
 
-class DiscordWebhookClient {
+open class DiscordWebhookClient {
 
     private val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
@@ -26,7 +26,7 @@ class DiscordWebhookClient {
         }
     }
 
-    suspend fun sendLink(webhookUrl: String, link: Link): Result<String> {
+    open suspend fun sendLink(webhookUrl: String, link: Link): Result<String> {
         return try {
             val payload = buildPayload(link)
             val response = client.post("$webhookUrl?wait=true") {
@@ -55,7 +55,7 @@ class DiscordWebhookClient {
         }
     }
 
-    suspend fun testWebhook(webhookUrl: String): Result<Unit> {
+    open suspend fun testWebhook(webhookUrl: String): Result<Unit> {
         return try {
             val payload = DiscordTestPayload(
                 content = "LinkSink connection test successful! You can delete this message."
@@ -100,7 +100,7 @@ class DiscordWebhookClient {
         )
     }
 
-    fun close() {
+    open fun close() {
         client.close()
     }
 }

@@ -5,14 +5,18 @@ import com.linksink.data.local.LinkEntity
 import com.linksink.data.local.TopicDao
 import com.linksink.data.local.toDomain
 import com.linksink.data.local.toEntity
-import com.linksink.data.remote.DiscordWebhookClient
 import com.linksink.model.DateRange
 import com.linksink.model.Link
 import com.linksink.model.SyncStatus
 import com.linksink.model.WebhookResolution
+import com.linksink.sync.providers.SyncProviderId
+import com.linksink.sync.providers.SyncProviderConfig
+import com.linksink.sync.providers.SyncProviderRegistry
+import com.linksink.sync.settings.SyncSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -23,10 +27,10 @@ import java.time.Instant
 class LinkRepository(
     private val linkDao: LinkDao,
     private val topicDao: TopicDao,
-    private val discordClient: DiscordWebhookClient,
-    private val settingsStore: SettingsStore,
-    private val metadataFetcher: MetadataFetcher,
-    private val applicationScope: CoroutineScope
+    private val settingsStore: SyncSettingsStore,
+    private val metadataFetcher: MetadataFetcherPort,
+    private val applicationScope: CoroutineScope,
+    private val providerRegistry: SyncProviderRegistry
 ) {
 
     fun getLinks(): Flow<List<Link>> {
@@ -40,7 +44,12 @@ class LinkRepository(
     }
 
     fun getPendingSyncCount(): Flow<Int> {
-        return linkDao.getPendingCount()
+        return combine(
+            settingsStore.syncSettings,
+            linkDao.getPendingCount()
+        ) { syncSettings, pendingCount ->
+            if (syncSettings.enabled) pendingCount else 0
+        }
     }
 
     suspend fun saveLink(
@@ -55,6 +64,12 @@ class LinkRepository(
             }
 
             val domain = extractDomain(trimmedUrl)
+            val syncSettings = settingsStore.syncSettings.first()
+            val topic = topicId?.let { topicDao.getById(it)?.toDomain() }
+            val globalWebhookUrl = settingsStore.webhookUrl.first()
+            val resolution = WebhookRouter.resolve(topic, globalWebhookUrl)
+            val initialSyncStatus = initialSyncStatusForSave(syncSettings, resolution)
+
             val link = Link(
                 url = trimmedUrl,
                 title = null,
@@ -64,7 +79,7 @@ class LinkRepository(
                 domain = domain,
                 topicId = topicId,
                 savedAt = Instant.now(),
-                syncStatus = SyncStatus.PENDING
+                syncStatus = initialSyncStatus
             )
 
             val id = linkDao.insert(link.toEntity())
@@ -74,7 +89,7 @@ class LinkRepository(
                 fetchAndUpdateMetadata(id, trimmedUrl)
             }
 
-            syncToDiscord(savedLink)
+            if (initialSyncStatus == SyncStatus.PENDING) syncLink(savedLink, syncSettings)
 
             val updatedLink = linkDao.getLinkById(id)?.toDomain() ?: savedLink
             Result.success(updatedLink)
@@ -138,12 +153,17 @@ class LinkRepository(
 
     suspend fun syncPendingLinks(): Result<Int> = withContext(Dispatchers.IO) {
         try {
+            val syncSettings = settingsStore.syncSettings.first()
+            if (!syncSettings.enabled || !syncSettings.isProviderConfigValid) {
+                return@withContext Result.success(0)
+            }
+
             val pendingLinks = linkDao.getPendingLinks()
             var syncedCount = 0
 
             for (entity in pendingLinks) {
                 val link = entity.toDomain()
-                if (syncToDiscord(link)) {
+                if (syncLink(link, syncSettings)) {
                     syncedCount++
                 }
             }
@@ -154,13 +174,25 @@ class LinkRepository(
         }
     }
 
-    private suspend fun syncToDiscord(link: Link): Boolean {
+    private suspend fun syncLink(link: Link): Boolean {
+        val syncSettings = settingsStore.syncSettings.first()
+        return syncLink(link, syncSettings)
+    }
+
+    private suspend fun syncLink(link: Link, syncSettings: SyncSettings): Boolean {
+        if (!syncSettings.enabled || !syncSettings.isProviderConfigValid) return false
+        val provider = providerRegistry.resolve(syncSettings.providerId) ?: return false
+
         val topic = link.topicId?.let { topicDao.getById(it)?.toDomain() }
         val globalWebhookUrl = settingsStore.webhookUrl.first()
 
         return when (val resolution = WebhookRouter.resolve(topic, globalWebhookUrl)) {
             is WebhookResolution.Send -> {
-                val result = discordClient.sendLink(resolution.webhookUrl, link)
+                val config = SyncProviderConfig(
+                    providerId = syncSettings.providerId,
+                    webhookUrl = resolution.webhookUrl
+                )
+                val result = provider.sendLink(config, link)
                 if (result.isSuccess) {
                     linkDao.updateSyncStatus(
                         id = link.id,
@@ -180,7 +212,7 @@ class LinkRepository(
             is WebhookResolution.LocalOnly -> {
                 linkDao.updateSyncStatus(
                     id = link.id,
-                    status = SyncStatus.SYNCED.name,
+                    status = SyncStatus.LOCAL_ONLY.name,
                     messageId = null
                 )
                 true
@@ -220,6 +252,24 @@ class LinkRepository(
         }
     }
 }
+
+internal fun initialSyncStatusForSave(
+    syncSettings: SyncSettings,
+    resolution: WebhookResolution
+): SyncStatus =
+    when (resolution) {
+        is WebhookResolution.LocalOnly -> SyncStatus.LOCAL_ONLY
+        else ->
+            if (
+                syncSettings.enabled &&
+                syncSettings.providerId == SyncProviderId.DISCORD_WEBHOOK &&
+                syncSettings.isProviderConfigValid
+            ) {
+                SyncStatus.PENDING
+            } else {
+                SyncStatus.LOCAL_ONLY
+            }
+    }
 
 internal fun mapSearchResults(query: String, entities: List<LinkEntity>): List<Link> {
     val links = entities.map { it.toDomain() }

@@ -46,7 +46,6 @@ class SettingsActivity : ComponentActivity() {
                     SettingsScreen(
                         viewModel = settingsViewModel,
                         onSettingsSaved = {
-                            startActivity(Intent(this, MainActivity::class.java))
                             finish()
                         },
                         onManageTopicsClick = { showTopicManagement = true }
