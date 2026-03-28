@@ -73,6 +73,7 @@ fun LinkSinkTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = LinkSinkTypography,
         content = content
     )
 }
