@@ -45,6 +45,10 @@ sealed interface LinkListUiState {
     ) : LinkListUiState {
         val hasActiveFilters: Boolean get() =
             searchQuery.isNotEmpty() || topicFilter != null || dateRange != null || linkFilter != LinkFilter.ALL
+        
+        val hasLinks: Boolean get() = links.isNotEmpty()
+        
+        val hasReadLinks: Boolean get() = links.any { it.isRead }
     }
     data class Empty(val message: String = "No links saved yet") : LinkListUiState
     data class Error(val message: String) : LinkListUiState
