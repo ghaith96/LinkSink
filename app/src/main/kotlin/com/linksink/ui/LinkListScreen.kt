@@ -2,6 +2,7 @@ package com.linksink.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,11 +62,14 @@ import com.linksink.model.Link
 import com.linksink.model.SyncStatus
 import com.linksink.model.Topic
 import com.linksink.ui.components.DateRangePickerSheet
+import com.linksink.ui.components.EditTopicSheet
 import com.linksink.ui.components.FilterChips
 import com.linksink.ui.components.SearchBar
 import com.linksink.ui.components.TopicChipSmall
+import com.linksink.ui.components.TopicSectionHeader
 import com.linksink.viewmodel.LinkListUiState
 import com.linksink.viewmodel.LinkListViewModel
+import com.linksink.viewmodel.TopicSection
 import com.linksink.viewmodel.TopicViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -81,12 +87,21 @@ fun LinkListScreen(
     val topicFilter by viewModel.topicFilter.collectAsState()
     val dateRange by viewModel.dateRange.collectAsState()
     val topics by viewModel.topics.collectAsState()
+    val sectionStates by viewModel.sectionStates.collectAsState()
+    val topicUiState by topicViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
     var showTopicDropdown by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
     val selectedTopicName = topics.find { it.id == topicFilter }?.name
+
+    // Handle edit-topic requests from the inline sync-mode badge (CUSTOM path)
+    LaunchedEffect(Unit) {
+        viewModel.editTopicRequest.collect { topic ->
+            topicViewModel.selectTopic(topic)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -120,7 +135,7 @@ fun LinkListScreen(
                             expanded = showTopicDropdown,
                             topics = topics,
                             selectedTopicId = topicFilter,
-                            onTopicSelected = { 
+                            onTopicSelected = {
                                 viewModel.setTopicFilter(it)
                                 showTopicDropdown = false
                             },
@@ -180,25 +195,41 @@ fun LinkListScreen(
                 }
 
                 is LinkListUiState.Success -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(
-                            items = state.links,
-                            key = { it.id }
-                        ) { link ->
-                            val linkTopicName = topics.find { it.id == link.topicId }?.name
-                            SwipeableLinkCard(
-                                link = link,
-                                topicName = linkTopicName,
-                                onDelete = { viewModel.deleteLink(link) },
-                                onClick = {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
-                                    context.startActivity(intent)
-                                }
-                            )
+                    if (useSectionedLayout(state)) {
+                        TopicSectionedList(
+                            sections = state.topicSections,
+                            sectionStates = sectionStates,
+                            onToggleSection = { viewModel.toggleSection(it) },
+                            onDelete = { viewModel.deleteLink(it) },
+                            onHookModeChange = { topic, mode ->
+                                viewModel.updateTopicHookMode(topic, mode)
+                            },
+                            onEditCustom = { topic ->
+                                topicViewModel.selectTopic(topic)
+                            },
+                            context = context
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(
+                                items = state.links,
+                                key = { it.id }
+                            ) { link ->
+                                val linkTopicName = topics.find { it.id == link.topicId }?.name
+                                SwipeableLinkCard(
+                                    link = link,
+                                    topicName = linkTopicName,
+                                    onDelete = { viewModel.deleteLink(link) },
+                                    onClick = {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -216,8 +247,81 @@ fun LinkListScreen(
                 onDismiss = { showDatePicker = false }
             )
         }
+
+        // Edit sheet for inline CUSTOM webhook mode selection
+        topicUiState.selectedTopic?.let { topic ->
+            EditTopicSheet(
+                topic = topic,
+                onDismiss = { topicViewModel.selectTopic(null) },
+                onSave = { updatedTopic ->
+                    topicViewModel.updateTopic(updatedTopic)
+                },
+                onTestWebhook = topicViewModel::testWebhook,
+                testResult = topicUiState.testResult,
+                testingWebhook = topicUiState.testingWebhook,
+                onClearTestResult = topicViewModel::clearTestResult
+            )
+        }
     }
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TopicSectionedList(
+    sections: List<TopicSection>,
+    sectionStates: Map<String, Boolean>,
+    onToggleSection: (String) -> Unit,
+    onDelete: (Link) -> Unit,
+    onHookModeChange: (Topic, com.linksink.model.HookMode) -> Unit,
+    onEditCustom: (Topic) -> Unit,
+    context: android.content.Context
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        sections.forEach { section ->
+            val key = section.sectionKey
+            val expanded = sectionStates[key] ?: true
+
+            stickyHeader(key = "header_$key") {
+                Column {
+                    TopicSectionHeader(
+                        topic = section.topic,
+                        linkCount = section.links.size,
+                        expanded = expanded,
+                        onToggle = { onToggleSection(key) },
+                        onHookModeChange = { mode -> section.topic?.let { onHookModeChange(it, mode) } },
+                        onEditCustom = { section.topic?.let { onEditCustom(it) } },
+                        modifier = Modifier
+                    )
+                    HorizontalDivider()
+                }
+            }
+
+            if (expanded) {
+                items(
+                    items = section.links,
+                    key = { "link_${it.id}" }
+                ) { link ->
+                    SwipeableLinkCard(
+                        link = link,
+                        topicName = section.topic?.name,
+                        onDelete = { onDelete(link) },
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+internal fun useSectionedLayout(state: LinkListUiState.Success): Boolean =
+    state.topicSections.isNotEmpty() && !state.hasActiveFilters
 
 @Composable
 private fun TopicFilterDropdown(
@@ -254,7 +358,8 @@ private fun SwipeableLinkCard(
     link: Link,
     topicName: String?,
     onDelete: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -269,6 +374,7 @@ private fun SwipeableLinkCard(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = modifier,
         backgroundContent = {
             Box(
                 modifier = Modifier
