@@ -73,15 +73,18 @@ fun ArchivedLinksScreen(
                                 topicName = linkTopic?.name,
                                 topicColor = linkTopic?.color,
                                 topicEmoji = linkTopic?.emoji,
-                        onDelete = { viewModel.deleteLink(link) },
-                        onToggleRead = null,
-                        onArchive = { viewModel.unarchiveLink(link) },
-                        onClick = {
-                            viewModel.openLink(link)
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
-                            context.startActivity(intent)
-                        }
-                    )
+                                onDelete = { viewModel.deleteLink(link) },
+                                onToggleRead = null,
+                                startToEnd = SwipeStartToEnd(
+                                    action = getSwipeAction(isArchived = true),
+                                    onComplete = { viewModel.unarchiveLink(link) }
+                                ),
+                                onClick = {
+                                    viewModel.openLink(link)
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                                    context.startActivity(intent)
+                                }
+                            )
                         }
                     }
                 }

@@ -37,11 +37,5 @@ fun LinkFilterChips(
             onClick = { onFilterSelected(LinkFilter.UNREAD) },
             label = { Text("Unread") }
         )
-        
-        FilterChip(
-            selected = selectedFilter == LinkFilter.ARCHIVED,
-            onClick = { onFilterSelected(LinkFilter.ARCHIVED) },
-            label = { Text("Archived") }
-        )
     }
 }

@@ -20,8 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.DateRange
 import com.linksink.ui.theme.Spacing
-import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+internal fun shouldOfferClearAllFiltersChip(topicFilterActive: Boolean, dateRangeActive: Boolean): Boolean =
+    topicFilterActive && dateRangeActive
 
 @Composable
 fun FilterChips(
@@ -32,7 +35,10 @@ fun FilterChips(
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val hasMultipleFilters = topicName != null && dateRange != null
+    val hasMultipleFilters = shouldOfferClearAllFiltersChip(
+        topicFilterActive = topicName != null,
+        dateRangeActive = dateRange != null
+    )
 
     Row(
         modifier = modifier
