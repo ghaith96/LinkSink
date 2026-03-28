@@ -3,6 +3,7 @@ package com.linksink.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CloudOff
@@ -54,9 +57,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.linksink.model.Link
 import com.linksink.model.SyncStatus
 import com.linksink.model.Topic
@@ -206,10 +214,11 @@ fun LinkListScreen(
                                 items = state.links,
                                 key = { it.id }
                             ) { link ->
-                                val linkTopicName = topics.find { it.id == link.topicId }?.name
+                                val linkTopic = topics.find { it.id == link.topicId }
                                 SwipeableLinkCard(
                                     link = link,
-                                    topicName = linkTopicName,
+                                    topicName = linkTopic?.name,
+                                    topicColor = linkTopic?.color,
                                     onDelete = { viewModel.deleteLink(link) },
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
@@ -292,6 +301,7 @@ private fun TopicSectionedList(
                     SwipeableLinkCard(
                         link = link,
                         topicName = section.topic?.name,
+                        topicColor = section.topic?.color,
                         onDelete = { onDelete(link) },
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
@@ -342,6 +352,7 @@ private fun TopicFilterDropdown(
 private fun SwipeableLinkCard(
     link: Link,
     topicName: String?,
+    topicColor: Int?,
     onDelete: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -361,29 +372,37 @@ private fun SwipeableLinkCard(
         state = dismissState,
         modifier = modifier,
         backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            SwipeDeleteBackground()
         },
         enableDismissFromStartToEnd = false
     ) {
-        LinkCard(link = link, topicName = topicName, onClick = onClick)
+        LinkCard(link = link, topicName = topicName, topicColor = topicColor, onClick = onClick)
     }
 }
 
 @Composable
-private fun LinkCard(
+private fun SwipeDeleteBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.errorContainer),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Delete",
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(end = 24.dp)
+        )
+    }
+}
+
+@Composable
+internal fun LinkCard(
     link: Link,
     topicName: String?,
+    topicColor: Int?,
     onClick: () -> Unit
 ) {
     Card(
@@ -393,39 +412,45 @@ private fun LinkCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Icon(
-                imageVector = Icons.Default.Link,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
+            FaviconImage(domain = link.domain)
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = link.title ?: link.domain,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = link.url,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+
+                DomainPill(domain = link.domain)
+
+                if (!link.description.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = link.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -436,17 +461,66 @@ private fun LinkCard(
                         color = MaterialTheme.colorScheme.outline
                     )
                     if (topicName != null) {
-                        TopicChipSmall(topicName = topicName)
+                        TopicChipSmall(topicName = topicName, color = topicColor)
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                    SyncStatusIcon(link.syncStatus)
                 }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            SyncStatusIcon(link.syncStatus)
         }
     }
 }
+
+@Composable
+private fun FaviconImage(domain: String) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = faviconUrl(domain),
+            contentDescription = null,
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop,
+            onError = {},
+            onLoading = {}
+        )
+        // Letter fallback shown behind AsyncImage (visible when image fails or loading)
+        Text(
+            text = domain.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
+@Composable
+private fun DomainPill(domain: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = domain,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+internal fun faviconUrl(domain: String): String =
+    "https://www.google.com/s2/favicons?sz=64&domain=$domain"
 
 @Composable
 private fun SyncStatusIcon(status: SyncStatus) {
