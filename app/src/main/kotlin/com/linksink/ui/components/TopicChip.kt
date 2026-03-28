@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
+import com.linksink.ui.theme.Spacing
 
 @Composable
 fun TopicChip(
@@ -52,22 +53,21 @@ fun TopicChip(
         contentColor = contentColor
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             topic.color?.let { colorInt ->
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(Spacing.sm)
                         .clip(CircleShape)
                         .background(Color(colorInt))
-                        .padding(end = 6.dp)
                 )
             }
             Text(
                 text = topic.name,
                 style = MaterialTheme.typography.labelMedium,
-                modifier = if (topic.color != null) Modifier.padding(start = 6.dp) else Modifier
+                modifier = if (topic.color != null) Modifier.padding(start = Spacing.sm) else Modifier
             )
         }
     }
@@ -85,13 +85,13 @@ fun TopicChipSmall(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically
         ) {
             color?.let { colorInt ->
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
+                        .size(Spacing.sm)
                         .clip(CircleShape)
                         .background(Color(colorInt))
                 )
@@ -100,7 +100,7 @@ fun TopicChipSmall(
                 text = topicName,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = if (color != null) Modifier.padding(start = 4.dp) else Modifier
+                modifier = if (color != null) Modifier.padding(start = Spacing.xs) else Modifier
             )
         }
     }

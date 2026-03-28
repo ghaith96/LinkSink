@@ -27,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
 import com.linksink.ui.components.TopicChip
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -48,12 +50,12 @@ fun TopicPickerSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
+                .padding(bottom = Spacing.xxl)
         ) {
             Text(
                 text = "Select Topic",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
             )
 
             ListItem(
@@ -71,21 +73,21 @@ fun TopicPickerSheet(
             )
 
             if (recentTopics.isNotEmpty()) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
 
                 Text(
                     text = "Recent",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 )
 
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     recentTopics.forEach { topic ->
                         TopicChip(
@@ -102,17 +104,17 @@ fun TopicPickerSheet(
             }
 
             if (otherTopics.isNotEmpty()) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
 
                 Text(
                     text = "All Topics",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 )
 
                 LazyColumn(
-                    modifier = Modifier.height(200.dp)
+                    modifier = Modifier.height(ComponentSize.TopicListFixedHeight)
                 ) {
                     items(otherTopics) { topic ->
                         ListItem(

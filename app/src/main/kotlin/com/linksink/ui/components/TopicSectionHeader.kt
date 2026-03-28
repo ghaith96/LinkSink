@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 
 @Composable
 internal fun TopicSectionHeader(
@@ -51,15 +53,15 @@ internal fun TopicSectionHeader(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = Spacing.md, end = Spacing.xs, top = Spacing.sm, bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         Box(
             modifier = Modifier
-                .width(4.dp)
-                .height(20.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .width(ComponentSize.TopicColorBarHeight)
+                .height(ComponentSize.TopicColorBarWidth)
+                .clip(RoundedCornerShape(ComponentSize.TopicColorBarCorner))
                 .background(accentColor)
         )
 
@@ -87,13 +89,13 @@ internal fun TopicSectionHeader(
         if (topic != null) {
             IconButton(
                 onClick = onEditTopic,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(ComponentSize.AvatarSize)
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Edit topic settings",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(ComponentSize.ChevronSize)
                 )
             }
         }

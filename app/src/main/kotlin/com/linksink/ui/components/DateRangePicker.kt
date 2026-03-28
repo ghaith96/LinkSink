@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.DateRange
+import com.linksink.ui.theme.Spacing
 
 enum class DateRangePreset(val label: String) {
     TODAY("Today"),
@@ -43,19 +44,19 @@ fun DateRangePickerSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                .padding(bottom = 32.dp)
+                .padding(Spacing.lg)
+                .padding(bottom = Spacing.xxl)
         ) {
             Text(
                 text = "Filter by Date",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = Spacing.lg)
             )
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 DateRangePreset.entries.forEach { preset ->
                     val presetRange = when (preset) {
@@ -87,7 +88,7 @@ fun DateRangePickerSheet(
                     },
                     modifier = Modifier
                         .align(Alignment.End)
-                        .padding(top = 16.dp)
+                        .padding(top = Spacing.lg)
                 ) {
                     Text("Clear Filter")
                 }

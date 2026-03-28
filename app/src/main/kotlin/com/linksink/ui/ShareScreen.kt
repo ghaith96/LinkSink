@@ -46,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.linksink.model.Topic
 import com.linksink.ui.components.TopicChip
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 import com.linksink.viewmodel.ShareUiState
 import com.linksink.viewmodel.ShareViewModel
 import kotlinx.coroutines.delay
@@ -75,7 +77,7 @@ fun ShareScreen(
         tonalElevation = 6.dp
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(Spacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when (val state = uiState) {
@@ -126,7 +128,7 @@ fun ShareScreen(
 @Composable
 private fun LoadingContent() {
     CircularProgressIndicator()
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
     Text("Processing...")
 }
 
@@ -150,12 +152,12 @@ private fun ReadyContent(
         contentDescription = null,
         tint = MaterialTheme.colorScheme.primary
     )
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
     Text(
         text = "Save Link",
         style = MaterialTheme.typography.titleLarge
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(Spacing.sm))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -164,14 +166,14 @@ private fun ReadyContent(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(Spacing.lg)
         ) {
             Text(
                 text = domain,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Spacing.xs))
             Text(
                 text = url,
                 style = MaterialTheme.typography.bodyMedium,
@@ -181,7 +183,7 @@ private fun ReadyContent(
         }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -205,11 +207,11 @@ private fun ReadyContent(
         }
 
         if (recentTopics.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm))
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 TopicChip(
                     topic = Topic(id = -1, name = "None"),
@@ -227,18 +229,18 @@ private fun ReadyContent(
         }
     }
 
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(Spacing.xl))
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         OutlinedButton(
             onClick = onCancel,
             modifier = Modifier.weight(1f)
         ) {
             Icon(Icons.Default.Close, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm))
             Text("Cancel")
         }
 
@@ -247,7 +249,7 @@ private fun ReadyContent(
             modifier = Modifier.weight(1f)
         ) {
             Icon(Icons.Default.Check, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm))
             Text("Save")
         }
     }
@@ -256,7 +258,7 @@ private fun ReadyContent(
 @Composable
 private fun SavingContent() {
     CircularProgressIndicator()
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
     Text("Saving...")
 }
 
@@ -283,16 +285,16 @@ internal fun SuccessContent() {
                 imageVector = Icons.Outlined.CheckCircle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(ComponentSize.SuccessIcon)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.lg))
             Text(
                 text = "Saved!",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Spacing.xs))
             Text(
                 text = "Link added to your collection",
                 style = MaterialTheme.typography.bodyMedium,
@@ -313,22 +315,22 @@ private fun ErrorContent(
         contentDescription = null,
         tint = MaterialTheme.colorScheme.error
     )
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
     Text(
         text = "Error",
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.error
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(Spacing.sm))
     Text(
         text = message,
         style = MaterialTheme.typography.bodyMedium
     )
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(Spacing.xl))
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         OutlinedButton(
             onClick = onDismiss,
@@ -353,17 +355,17 @@ private fun NoUrlContent(onDismiss: () -> Unit) {
         contentDescription = null,
         tint = MaterialTheme.colorScheme.error
     )
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(Spacing.lg))
     Text(
         text = "No link found",
         style = MaterialTheme.typography.titleLarge
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(Spacing.sm))
     Text(
         text = "The shared content doesn't contain a valid URL.",
         style = MaterialTheme.typography.bodyMedium
     )
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(Spacing.xl))
 
     Button(onClick = onDismiss) {
         Text("OK")
@@ -379,12 +381,12 @@ private fun PreviewSuccessContent() {
         androidx.compose.material3.Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(Spacing.xl),
             shape = MaterialTheme.shapes.large,
             tonalElevation = 6.dp
         ) {
             androidx.compose.foundation.layout.Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(Spacing.xl),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 SuccessContent()

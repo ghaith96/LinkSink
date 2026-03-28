@@ -41,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 import com.linksink.viewmodel.SettingsUiState
 import com.linksink.viewmodel.SettingsViewModel
 import com.linksink.viewmodel.TestResult
@@ -127,9 +129,9 @@ private fun SettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(Spacing.lg)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg)
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -138,14 +140,14 @@ private fun SettingsContent(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(Spacing.lg)
             ) {
                 Text(
                     text = "How to get a Discord Webhook URL",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
                     text = "1. Open Discord and go to your server\n" +
                             "2. Right-click a channel → Edit Channel\n" +
@@ -193,7 +195,7 @@ private fun SettingsContent(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             OutlinedButton(
                 onClick = onTestClicked,
@@ -203,11 +205,11 @@ private fun SettingsContent(
                 if (uiState.isTesting) {
                     CircularProgressIndicator(
                         modifier = Modifier
-                            .height(20.dp)
-                            .width(20.dp),
-                        strokeWidth = 2.dp
+                            .height(ComponentSize.ProgressIndicator)
+                            .width(ComponentSize.ProgressIndicator),
+                        strokeWidth = ComponentSize.ProgressStrokeWidth
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Spacing.sm))
                 }
                 Text("Test Connection")
             }
@@ -220,25 +222,23 @@ private fun SettingsContent(
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier
-                            .height(20.dp)
-                            .width(20.dp),
-                        strokeWidth = 2.dp,
+                            .height(ComponentSize.ProgressIndicator)
+                            .width(ComponentSize.ProgressIndicator),
+                        strokeWidth = ComponentSize.ProgressStrokeWidth,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Spacing.sm))
                 }
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Spacing.sm))
                 Text("Save")
             }
         }
 
         if (onManageTopicsClick != null) {
-            Spacer(modifier = Modifier.height(16.dp))
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -246,19 +246,19 @@ private fun SettingsContent(
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(Spacing.lg)
                 ) {
                     Text(
                         text = "Topics",
                         style = MaterialTheme.typography.titleMedium
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
                     Text(
                         text = "Organize your links into topics with custom webhook settings.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Spacing.md))
                     OutlinedButton(
                         onClick = onManageTopicsClick,
                         modifier = Modifier.fillMaxWidth()

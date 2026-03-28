@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.DateRange
+import com.linksink.ui.theme.Spacing
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
 
@@ -37,8 +38,8 @@ fun FilterChips(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         if (topicName != null) {
             InputChip(
@@ -49,7 +50,7 @@ fun FilterChips(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear topic filter",
-                        modifier = Modifier.padding(start = 4.dp)
+                        modifier = Modifier.padding(start = Spacing.xs)
                     )
                 },
                 colors = InputChipDefaults.inputChipColors(
@@ -68,7 +69,7 @@ fun FilterChips(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear date filter",
-                        modifier = Modifier.padding(start = 4.dp)
+                        modifier = Modifier.padding(start = Spacing.xs)
                     )
                 },
                 colors = InputChipDefaults.inputChipColors(

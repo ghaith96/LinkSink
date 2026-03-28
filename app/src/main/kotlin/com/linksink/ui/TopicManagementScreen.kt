@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.HookMode
+import com.linksink.ui.theme.Spacing
 import com.linksink.model.Topic
 import com.linksink.ui.components.EditTopicSheet
 import com.linksink.ui.components.TopicForm
@@ -101,8 +102,8 @@ fun TopicManagementScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 items(topics, key = { it.id }) { topic ->
                     TopicCard(
@@ -170,16 +171,16 @@ private fun EmptyTopicsContent(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.sm))
         Text(
             text = "Create topics to organize your links",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Spacing.lg))
         Button(onClick = onCreateClick) {
             Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm))
             Text("Create Topic")
         }
     }
@@ -198,12 +199,12 @@ private fun TopicCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // elevation, not spacing
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -211,7 +212,7 @@ private fun TopicCard(
                     text = topic.name,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
                 Text(
                     text = when (topic.hookMode) {
                         HookMode.LOCAL_ONLY -> "Local only (no Discord sync)"
@@ -297,7 +298,7 @@ private fun DeleteTopicDialog(
             Column {
                 Text("Delete \"$topicName\"?")
                 if (linkCount > 0) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
                     Text(
                         text = "This topic has $linkCount link${if (linkCount > 1) "s" else ""}.",
                         style = MaterialTheme.typography.bodySmall,

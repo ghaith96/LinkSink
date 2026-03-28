@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.ui.ShareScreen
 import com.linksink.ui.theme.LinkSinkTheme
+import com.linksink.ui.theme.Spacing
 import com.linksink.viewmodel.ShareViewModel
 
 class ShareActivity : ComponentActivity() {
@@ -51,7 +52,7 @@ class ShareActivity : ComponentActivity() {
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     Box(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(Spacing.lg)
                     ) {
                         ShareScreen(
                             viewModel = viewModel,

@@ -68,6 +68,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 import com.linksink.model.Link
 import com.linksink.model.SyncStatus
 import com.linksink.model.Topic
@@ -210,8 +212,8 @@ fun LinkListScreen(
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            contentPadding = PaddingValues(Spacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
                             items(
                                 items = state.links,
@@ -276,7 +278,7 @@ private fun TopicSectionedList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp)
+        contentPadding = PaddingValues(bottom = Spacing.lg)
     ) {
         sections.forEach { section ->
             val key = section.sectionKey
@@ -314,7 +316,7 @@ private fun TopicSectionedList(
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
                             context.startActivity(intent)
                         },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                     )
                 }
             }
@@ -400,7 +402,7 @@ private fun SwipeDeleteBackground() {
             imageVector = Icons.Default.Delete,
             contentDescription = "Delete",
             tint = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.padding(end = 24.dp)
+            modifier = Modifier.padding(end = Spacing.xl)
         )
     }
 }
@@ -419,18 +421,18 @@ internal fun LinkCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // elevation, not spacing
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(Spacing.md),
             verticalAlignment = Alignment.Top
         ) {
             FaviconImage(domain = link.domain)
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.md))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -441,12 +443,12 @@ internal fun LinkCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
 
                 DomainPill(domain = link.domain)
 
                 if (!link.description.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
                     Text(
                         text = link.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -456,11 +458,11 @@ internal fun LinkCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Spacing.sm))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     Text(
                         text = formatTimestamp(link),
@@ -482,8 +484,8 @@ internal fun LinkCard(
 private fun FaviconImage(domain: String) {
     Box(
         modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .size(ComponentSize.FaviconOuter)
+            .clip(RoundedCornerShape(ComponentSize.FaviconCorner))
             .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
@@ -491,7 +493,7 @@ private fun FaviconImage(domain: String) {
             model = faviconUrl(domain),
             contentDescription = null,
             modifier = Modifier
-                .size(28.dp)
+                .size(ComponentSize.FaviconInner)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop,
             onError = {},
@@ -511,9 +513,9 @@ private fun FaviconImage(domain: String) {
 private fun DomainPill(domain: String) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(Spacing.xs))
             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .padding(horizontal = Spacing.sm, vertical = Spacing.xs)
     ) {
         Text(
             text = domain,
@@ -553,7 +555,7 @@ private fun SyncStatusIcon(status: SyncStatus) {
         imageVector = icon,
         contentDescription = description,
         tint = tint,
-        modifier = Modifier.size(20.dp)
+        modifier = Modifier.size(ComponentSize.SyncIcon)
     )
 }
 
@@ -566,7 +568,7 @@ private fun StateIllustration(
 ) {
     Box(
         modifier = modifier
-            .size(88.dp)
+            .size(ComponentSize.IllustrationCircle)
             .clip(CircleShape)
             .background(containerColor),
         contentAlignment = Alignment.Center
@@ -574,7 +576,7 @@ private fun StateIllustration(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(44.dp),
+            modifier = Modifier.size(ComponentSize.IllustrationIcon),
             tint = iconTint
         )
     }
@@ -591,21 +593,19 @@ private fun EmptyContent(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             StateIllustration(
                 icon = Icons.Default.LinkOff,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 iconTint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Share a link from any app to get started",
                 style = MaterialTheme.typography.bodyMedium,
@@ -627,28 +627,25 @@ private fun ErrorContent(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             StateIllustration(
                 icon = Icons.Default.CloudOff,
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 iconTint = MaterialTheme.colorScheme.onErrorContainer
             )
-            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Something went wrong",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (onRetry != null) {
-                Spacer(modifier = Modifier.height(24.dp))
                 androidx.compose.material3.Button(onClick = onRetry) {
                     Text("Retry")
                 }

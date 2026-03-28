@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.linksink.model.HookMode
+import com.linksink.ui.theme.ComponentSize
+import com.linksink.ui.theme.Spacing
 import com.linksink.model.Topic
 import com.linksink.viewmodel.WebhookTestResult
 
@@ -104,15 +106,15 @@ internal fun TopicForm(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .padding(bottom = 32.dp)
+            .padding(Spacing.lg)
+            .padding(bottom = Spacing.xxl)
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Spacing.lg))
 
         OutlinedTextField(
             value = name,
@@ -122,7 +124,7 @@ internal fun TopicForm(
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Spacing.lg))
 
         ExposedDropdownMenuBox(
             expanded = hookModeExpanded,
@@ -172,7 +174,7 @@ internal fun TopicForm(
         }
 
         if (hookMode == HookMode.CUSTOM) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.lg))
 
             OutlinedTextField(
                 value = customUrl,
@@ -186,7 +188,7 @@ internal fun TopicForm(
                 placeholder = { Text("https://discord.com/api/webhooks/...") }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -197,14 +199,14 @@ internal fun TopicForm(
                 ) {
                     if (testingWebhook) {
                         CircularProgressIndicator(
-                            modifier = Modifier.padding(end = 8.dp),
-                            strokeWidth = 2.dp
+                            modifier = Modifier.padding(end = Spacing.sm),
+                            strokeWidth = ComponentSize.ProgressStrokeWidth
                         )
                     }
                     Text("Test Webhook")
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Spacing.sm))
 
                 when (testResult) {
                     is WebhookTestResult.Success -> {
@@ -226,11 +228,11 @@ internal fun TopicForm(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Spacing.xl))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             OutlinedButton(
                 onClick = onCancel,
