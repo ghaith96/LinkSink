@@ -2,6 +2,7 @@ package com.linksink.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.linksink.data.SettingsStore
 import com.linksink.data.TopicRepository
 import com.linksink.data.remote.DiscordWebhookClient
 import com.linksink.model.HookMode
@@ -36,7 +37,8 @@ data class DeleteConfirmation(
 
 class TopicViewModel(
     private val topicRepository: TopicRepository,
-    private val discordClient: DiscordWebhookClient
+    private val discordClient: DiscordWebhookClient,
+    private val settingsStore: SettingsStore? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TopicUiState())
@@ -94,6 +96,7 @@ class TopicViewModel(
         viewModelScope.launch {
             try {
                 topicRepository.deleteTopic(confirmation.topicId, deleteLinks)
+                settingsStore?.removeSectionState(confirmation.topicId.toString())
                 _uiState.update { it.copy(deleteConfirmation = null, error = null) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }

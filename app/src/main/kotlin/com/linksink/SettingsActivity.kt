@@ -31,7 +31,8 @@ class SettingsActivity : ComponentActivity() {
         )
         topicViewModel = TopicViewModel(
             topicRepository = app.topicRepository,
-            discordClient = app.discordClient
+            discordClient = app.discordClient,
+            settingsStore = app.settingsStore
         )
 
         setContent {
