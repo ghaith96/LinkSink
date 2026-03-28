@@ -11,6 +11,7 @@ import com.linksink.data.SettingsStore
 import com.linksink.data.TopicRepository
 import com.linksink.data.local.LinkDatabase
 import com.linksink.data.remote.DiscordWebhookClient
+import com.linksink.notifications.NotificationHelper
 import com.linksink.sync.SyncManager
 import com.linksink.sync.SyncWorker
 import com.linksink.sync.SchedulingDecision
@@ -19,6 +20,7 @@ import com.linksink.sync.providers.DiscordWebhookClientApi
 import com.linksink.sync.providers.DiscordWebhookSyncProvider
 import com.linksink.sync.providers.NoneSyncProvider
 import com.linksink.sync.providers.SyncProviderRegistry
+import com.linksink.workers.NotificationScheduler
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -26,6 +28,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -47,11 +50,16 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
     lateinit var syncManager: SyncManager
         private set
 
+    lateinit var notificationScheduler: NotificationScheduler
+        private set
+
     private lateinit var database: LinkDatabase
     private lateinit var metadataFetcher: MetadataFetcher
     private lateinit var httpClient: HttpClient
+    private lateinit var notificationHelper: NotificationHelper
     private val applicationScope = CoroutineScope(SupervisorJob())
     private var lastSchedulingDecision: SchedulingDecision? = null
+    private var lastNotificationSettings: Pair<Boolean, Int>? = null
 
     override fun onCreate() {
         super<Application>.onCreate()
@@ -98,6 +106,11 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
             repository = repository
         )
 
+        notificationHelper = NotificationHelper(this)
+        notificationHelper.createNotificationChannel()
+        
+        notificationScheduler = NotificationScheduler(this)
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
         applicationScope.launch {
@@ -109,6 +122,24 @@ class LinkSinkApp : Application(), DefaultLifecycleObserver {
                 when (decision) {
                     SchedulingDecision.EnsurePeriodic -> SyncWorker.enqueuePeriodicSync(this@LinkSinkApp)
                     SchedulingDecision.CancelPeriodic -> SyncWorker.cancelPeriodicSync(this@LinkSinkApp)
+                }
+            }
+        }
+
+        applicationScope.launch {
+            combine(
+                settingsStore.reminderEnabled,
+                settingsStore.reminderFrequencyHours
+            ) { enabled, frequency ->
+                enabled to frequency
+            }.collect { (enabled, frequency) ->
+                if (enabled to frequency == lastNotificationSettings) return@collect
+                lastNotificationSettings = enabled to frequency
+
+                if (enabled) {
+                    notificationScheduler.scheduleReminders(frequency)
+                } else {
+                    notificationScheduler.cancelReminders()
                 }
             }
         }

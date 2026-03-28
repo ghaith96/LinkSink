@@ -23,3 +23,4 @@ keystore/
 keystore.properties
 
 plans/*
+specs/*

@@ -1,11 +1,13 @@
 package com.linksink
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import com.linksink.notifications.NotificationHelper
 import com.linksink.ui.LinkListScreen
 import com.linksink.ui.theme.LinkSinkTheme
 import com.linksink.launch.LaunchDestination
@@ -45,6 +47,12 @@ class MainActivity : ComponentActivity() {
                     topicViewModel = topicViewModel,
                     onSettingsClick = {
                         startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                    },
+                    onArchivedClick = {
+                        startActivity(Intent(this@MainActivity, ArchivedLinksActivity::class.java))
+                    },
+                    onNotificationsClick = {
+                        startActivity(Intent(this@MainActivity, NotificationSettingsActivity::class.java))
                     }
                 )
             }
@@ -59,6 +67,31 @@ class MainActivity : ComponentActivity() {
                 LaunchDestination.Main -> Unit
                 LaunchDestination.Settings -> {
                     startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                }
+            }
+        }
+
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        when (intent?.action) {
+            NotificationHelper.ACTION_OPEN_LINK -> {
+                val linkId = intent.getLongExtra(NotificationHelper.EXTRA_LINK_ID, -1L)
+                if (linkId != -1L) {
+                    lifecycleScope.launch {
+                        val url = (application as LinkSinkApp).repository.openLink(linkId)
+                        if (url != null) {
+                            val openIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            startActivity(openIntent)
+                        }
+                    }
                 }
             }
         }

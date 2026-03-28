@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.linksink.sync.settings.SyncSettings
@@ -22,6 +23,11 @@ class SettingsStore(private val context: Context) : AppSettingsStore {
         val TOPIC_SECTION_STATES = stringPreferencesKey("topic_section_states")
         val SYNC_PROVIDER_ID = stringPreferencesKey("sync_provider_id")
         val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
+        val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
+        val REMINDER_FREQUENCY_HOURS = intPreferencesKey("reminder_frequency_hours")
+        val REMINDER_MAX_DAILY = intPreferencesKey("reminder_max_daily")
+        val LAST_NOTIFICATION_DATE = stringPreferencesKey("last_notification_date")
+        val TODAY_NOTIFICATION_COUNT = intPreferencesKey("today_notification_count")
     }
 
     override val webhookUrl: Flow<String?> = context.dataStore.data
@@ -51,6 +57,21 @@ class SettingsStore(private val context: Context) : AppSettingsStore {
                 storedWebhookUrl = preferences[Keys.WEBHOOK_URL]
             )
         }
+
+    val reminderEnabled: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[Keys.REMINDER_ENABLED] ?: false }
+
+    val reminderFrequencyHours: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[Keys.REMINDER_FREQUENCY_HOURS] ?: 24 }
+
+    val reminderMaxDaily: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[Keys.REMINDER_MAX_DAILY] ?: 1 }
+
+    val lastNotificationDate: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.LAST_NOTIFICATION_DATE] }
+
+    val todayNotificationCount: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[Keys.TODAY_NOTIFICATION_COUNT] ?: 0 }
 
     suspend fun setSectionExpanded(key: String, expanded: Boolean) {
         context.dataStore.edit { preferences ->
@@ -116,6 +137,63 @@ class SettingsStore(private val context: Context) : AppSettingsStore {
         context.dataStore.edit { preferences ->
             preferences[Keys.ONBOARDING_COMPLETE] = complete
         }
+    }
+
+    suspend fun setReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.REMINDER_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setReminderFrequencyHours(hours: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.REMINDER_FREQUENCY_HOURS] = hours
+        }
+    }
+
+    suspend fun setReminderMaxDaily(count: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.REMINDER_MAX_DAILY] = count
+        }
+    }
+
+    suspend fun incrementNotificationCount() {
+        context.dataStore.edit { preferences ->
+            val currentCount = preferences[Keys.TODAY_NOTIFICATION_COUNT] ?: 0
+            preferences[Keys.TODAY_NOTIFICATION_COUNT] = currentCount + 1
+            preferences[Keys.LAST_NOTIFICATION_DATE] = getCurrentDate()
+        }
+    }
+
+    suspend fun tryIncrementNotificationCount(): Boolean {
+        var success = false
+        context.dataStore.edit { preferences ->
+            val maxDaily = preferences[Keys.REMINDER_MAX_DAILY] ?: 1
+            val currentCount = preferences[Keys.TODAY_NOTIFICATION_COUNT] ?: 0
+            
+            if (currentCount < maxDaily) {
+                preferences[Keys.TODAY_NOTIFICATION_COUNT] = currentCount + 1
+                preferences[Keys.LAST_NOTIFICATION_DATE] = getCurrentDate()
+                success = true
+            }
+        }
+        return success
+    }
+
+    suspend fun resetNotificationCountIfNeeded() {
+        context.dataStore.edit { preferences ->
+            val lastDate = preferences[Keys.LAST_NOTIFICATION_DATE]
+            val currentDate = getCurrentDate()
+            
+            if (lastDate != currentDate) {
+                preferences[Keys.TODAY_NOTIFICATION_COUNT] = 0
+                preferences[Keys.LAST_NOTIFICATION_DATE] = currentDate
+            }
+        }
+    }
+
+    private fun getCurrentDate(): String {
+        return java.time.LocalDate.now().toString()
     }
 
     companion object {
